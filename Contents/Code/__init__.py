@@ -1,15 +1,18 @@
 import datetime, os, time, re, locale
 from string import Template
 
-# Agent name
-AGENT_NAME = 'Extended Personal Media Shows'
+# Series agent name
+SERIES_AGENT_NAME = 'Extended Personal Media Shows'
+# Movies agent name
+MOVIE_AGENT_NAME = 'Extended Personal Media Movies'
 
 # TV date format regular expression (Show Title - 2012-09-19 - Episode Title)
-TV_DATE_REGEX = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*([0-9]{4})[-\. ]([0-9]{1,2})[-\. ]([0-9]{1,2})[ ]*[-\.][ ]*(.*)\.(.*)$'
+SERIES_DATE_REGEX_1 = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*([0-9]{4})[-\. ]([0-9]{1,2})[-\. ]([0-9]{1,2})[ ]*[-\.][ ]*(.*)\.(.*)$'
 # TV date format regular expression (Show Title - 09-19-2013 - Episode Title)
-TV_DATE_ALT_REGEX = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*([0-9]{1,2})[-\. ]([0-9]{1,2})[-\. ]([0-9]{4})[ ]*[-\.][ ]*(.*)\.(.*)$'
+SERIES_DATE_REGEX_2 = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*([0-9]{1,2})[-\. ]([0-9]{1,2})[-\. ]([0-9]{4})[ ]*[-\.][ ]*(.*)\.(.*)$'
 # TV episode format regular expression (Show title - s2012e0919 - Episode Title)
-TV_EPISODE_REGEX = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*[sS]([0-9]*)[eE]([0-9]*)[ ]*[-\.][ ]*(.*)\.(.*)$'
+SERIES_EPISODE_REGEX = r'^(.*)[\\/]([^\\]+)[\\/](.*)[ ]*[-\.][ ]*[sS]([0-9]*)[eE]([0-9]*)[ ]*[-\.][ ]*(.*)\.(.*)$'
+
 # Episode name REGEX
 TV_EPISODE_NAME_REGEX = r'(.*)[ ]*part|pt[0-9]'
 
@@ -103,9 +106,9 @@ class DateBasedMediaParser(BaseMediaParser):
         BaseMediaParser.__init__(self, mediaFile, lang)
 
         # Find out what type file format is being used
-        if re.match(TV_DATE_REGEX, mediaFile) is not None:
+        if re.match(SERIES_DATE_REGEX_1, mediaFile) is not None:
             # Find the file name parts
-            fileParts = re.findall(TV_DATE_REGEX, mediaFile)
+            fileParts = re.findall(SERIES_DATE_REGEX_1, mediaFile)
             for filePart in fileParts:
                 Log('__init__ ::  %s', filePart)
                 for p in filePart:
@@ -117,9 +120,9 @@ class DateBasedMediaParser(BaseMediaParser):
                 self.episodeDay = filePart[5].strip()
                 self.parsedEpisodeTitle = self.stripPart(filePart[6].strip())
         # Find out what type file format is being used
-        elif re.match(TV_DATE_ALT_REGEX, mediaFile) is not None:
+        elif re.match(SERIES_DATE_REGEX_2, mediaFile) is not None:
             # Find the file name parts
-            fileParts = re.findall(TV_DATE_ALT_REGEX, mediaFile)
+            fileParts = re.findall(SERIES_DATE_REGEX_2, mediaFile)
             for filePart in fileParts:
                 Log('__init__ ::  %s', filePart)
                 for p in filePart:
@@ -153,7 +156,7 @@ class EpisodeMediaParser(BaseMediaParser):
         BaseMediaParser.__init__(self, mediaFile, lang)
 
         # Find the file name parts
-        fileParts = re.findall(TV_EPISODE_REGEX, mediaFile)
+        fileParts = re.findall(SERIES_EPISODE_REGEX, mediaFile)
         for filePart in fileParts:
             Log('__init__ :: %s', filePart)
             for p in filePart:
@@ -177,11 +180,11 @@ class EpisodeMediaParser(BaseMediaParser):
         return self.formatTemplate(template, context)
     
 def Start():
-    Log('Start :: starting %s', AGENT_NAME)
+    Log('Start :: starting %s', SERIES_AGENT_NAME)
     pass
 
 class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
-    name = AGENT_NAME
+    name = SERIES_AGENT_NAME
     languages = Locale.Language.All()
     accepts_from = ['com.plexapp.agents.localmedia']
 
@@ -241,11 +244,11 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         Log('parseEpisodeFileName :: absolute file path: %s', absFilePath)
         
         parser = None
-        if re.match(TV_DATE_REGEX, absFilePath) is not None:
+        if re.match(SERIES_DATE_REGEX_1, absFilePath) is not None:
             parser = DateBasedMediaParser(absFilePath, lang)
-        elif re.match(TV_DATE_ALT_REGEX, absFilePath) is not None:
+        elif re.match(SERIES_DATE_REGEX_2, absFilePath) is not None:
             parser = DateBasedMediaParser(absFilePath, lang)
-        elif re.match(TV_EPISODE_REGEX, absFilePath) is not None:
+        elif re.match(SERIES_EPISODE_REGEX, absFilePath) is not None:
             parser = EpisodeMediaParser(absFilePath, lang)
             
         Log('parseEpisodeFileName :: parser = %s', parser)

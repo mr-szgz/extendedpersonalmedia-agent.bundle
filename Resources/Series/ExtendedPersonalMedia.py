@@ -1,5 +1,6 @@
 import re, os, os.path
 import Media, VideoFiles, Stack, Utils
+import test
 
 # Look for episodes.
 def Scan(path, files, mediaList, subdirs, language=None, root=None):

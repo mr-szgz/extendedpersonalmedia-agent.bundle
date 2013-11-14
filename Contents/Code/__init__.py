@@ -3,9 +3,9 @@ from string import Template
 import test
 
 # Series agent name
-SERIES_AGENT_NAME = 'Extended Personal Media Shows'
+SERIES_AGENT_NAME = 'Extended Personal Media Shows 2'
 # Movies agent name
-MOVIE_AGENT_NAME = 'Extended Personal Media Movies'
+MOVIE_AGENT_NAME = 'Extended Personal Media Movies 2'
 
 # Series date format regular expression (Show Title - 2012-09-19 - Episode Title)
 SERIES_DATE_REGEX_1 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'

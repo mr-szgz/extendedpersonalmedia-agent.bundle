@@ -1,5 +1,6 @@
 import datetime, os, time, re, locale
 from string import Template
+import test
 
 # Series agent name
 SERIES_AGENT_NAME = 'Extended Personal Media Shows'
@@ -221,6 +222,7 @@ class EpisodeMediaParser(BaseMediaParser):
     
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME, MOVIE_AGENT_NAME)
+    test.test('Extended Personal Media - Scan')
     pass
 
 class ExtendedPersonalMediaAgentMovies(Agent.Movies):

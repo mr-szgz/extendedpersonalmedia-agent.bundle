@@ -4,6 +4,8 @@ import test
 
 # Look for episodes.
 def Scan(path, files, mediaList, subdirs, language=None, root=None):
+    
+    test.test('Extended Personal Media - Scan')
 
     # Scan for video files.
     VideoFiles.Scan(path, files, mediaList, subdirs, root)

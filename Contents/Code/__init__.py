@@ -14,16 +14,10 @@ SERIES_DATE_REGEX_2 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeas
 # Series episode format regular expression (Show title - s2012e0919 - Episode Title)
 SERIES_EPISODE_REGEX = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*[sS](?P<season>[0-9]*)[eE](?P<episode>[0-9]*)[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
 
-# List of series parsers
-SERIES_PARSERS = [DateBasedMediaParser(), EpisodeMediaParser()]
-
 # Series date format regular expression (Show Title - 2012-09-19 - Episode Title)
 MOVIES_DATE_REGEX_1 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
 # Series date format regular expression (Show Title - 09-19-2013 - Episode Title)
 MOVIES_DATE_REGEX_2 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[-\. ](?P<year>[0-9]{4})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-
-# List of movie parsers
-MOVIES_PARSERS = [DateBasedMediaParser()]
 
 # Episode name REGEX
 SERIES_EPISODE_TITLE_PART_REGEX = r'(?P<title>.*)[ ]*part|pt[0-9]'
@@ -33,6 +27,8 @@ DATE_TEMPLATE_REGEX = r'(\$\{([_a-z][_a-z0-9]*[\|][^\}]*)\})'
 # Date template breakdown regex
 DATE_TEMPLATE_BREAKDOWN_REGEX = r'\$\{([_a-z][_a-z0-9]*)[\|]([^\}]*)\}'
 
+def log(methodName, message, *args):
+    Log(methodName + ' :: ' + message, *args)
 
 # Only use unicode if it's supported, which it is on Windows and OS X,
 # but not Linux. This allows things to work with non-ASCII characters
@@ -48,9 +44,6 @@ def unicodize(s):
         except: pass
     log('unicodize', 'after unicodizing: %s', str(filename))
     return filename
-
-def log(methodName, message, *args):
-    Log(methodName + ' :: ' + message, *args)
 
 class BaseMediaParser(object):
     '''
@@ -219,7 +212,12 @@ class EpisodeMediaParser(BaseMediaParser):
         template = Prefs['episode.parser.episode.summary.template']
         context = {'episode_title': self.parsedEpisodeTitle, 'show_title': self.showTitle}
         return self.formatTemplate(template, context)
-    
+
+# List of series parsers
+SERIES_PARSERS = [DateBasedMediaParser(), EpisodeMediaParser()]
+# List of movie parsers
+MOVIES_PARSERS = [DateBasedMediaParser()]
+
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME, MOVIE_AGENT_NAME)
     test.test('Extended Personal Media - Scan')

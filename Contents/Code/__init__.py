@@ -214,9 +214,9 @@ class EpisodeMediaParser(BaseMediaParser):
         return self.formatTemplate(template, context)
 
 # List of series parsers
-SERIES_PARSERS = [DateBasedMediaParser(), EpisodeMediaParser()]
+SERIES_PARSERS = [SeriesDateBasedMediaParser(), EpisodeMediaParser()]
 # List of movie parsers
-MOVIES_PARSERS = [DateBasedMediaParser()]
+MOVIES_PARSERS = [MoviesDateBasedMediaParser()]
 
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME, MOVIE_AGENT_NAME)

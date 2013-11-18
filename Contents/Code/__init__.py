@@ -1,11 +1,11 @@
 import datetime, os, time, re, locale
 from string import Template
-import test
+#import test
 
 # Series agent name
-SERIES_AGENT_NAME = 'Extended Personal Media Shows 2'
+SERIES_AGENT_NAME = 'Extended Personal Media Shows'
 # Movies agent name
-MOVIE_AGENT_NAME = 'Extended Personal Media Movies 2'
+MOVIE_AGENT_NAME = 'Extended Personal Media Movies'
 
 # Series date format regular expression (Show Title - 2012-09-19 - Episode Title)
 SERIES_DATE_REGEX_1 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
@@ -49,11 +49,16 @@ class BaseMediaParser(object):
     '''
         Parses the file name and determines the type of tile that was found
     '''
+    def setValues(self, match):
+        pass
+
+    def getSupportedRegexes(self):
+        return []
     
     def containsMatch(self, mediaFile):
         retVal = False
         # Iterate over the list of regular expressions
-        for regex in supportedRegexes:
+        for regex in self.getSupportedRegexes():
             # Find out what file format is being used
             match = re.search(regex, mediaFile)
             if match:
@@ -68,28 +73,24 @@ class BaseMediaParser(object):
         self.lang = lang
 
         # Iterate over the list of regular expressions
-        for regex in supportedRegexes:
+        for regex in self.getSupportedRegexes():
             # Find out what file format is being used
             match = re.search(regex, mediaFile)
+            log('parse', 'matches: %s', match)
             if match:
-                setValues(match)
+                log('parse', 'found matches')
+                self.setValues(match)
                 break
 
-    def setValues(self, match):
-        pass
-
-    def getSupportedRegexes(self):
-        return []
-        
     def stripPart(self, s):
         retVal = s
         # Test whether it contains part
         match = re.search(SERIES_EPISODE_TITLE_PART_REGEX, retVal)
         if match:
-            Log('stripPart', 'title matched')
-            retVal = match('title').strip()
+            log('stripPart', 'title matched')
+            retVal = match.group('title').strip()
                 
-        Log('stripPart', 'parsed episode title: %s', retVal)
+        log('stripPart', 'parsed episode title: %s', retVal)
         return retVal
         
     def formatTemplate(self, template, context=None):
@@ -142,14 +143,14 @@ class MoviesDateBasedMediaParser(BaseMediaParser):
         return [MOVIES_DATE_REGEX_1, MOVIES_DATE_REGEX_2]
     
     def setValues(self, match):
-        self.showTitle = match('show').strip()
-        self.episodeYear = match('year').strip()
-        self.episodeMonth = match('month').strip()
-        self.episodeDay = match('day').strip()
-        self.parsedEpisodeTitle = self.stripPart(match('title').strip())
+        self.showTitle = match.group('show').strip()
+        self.episodeYear = match.group('year').strip()
+        self.episodeMonth = match.group('month').strip()
+        self.episodeDay = match.group('day').strip()
+        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
         # Create the date
         self.episodeDate = datetime.datetime(int(self.episodeYear), int(self.episodeMonth), int(self.episodeDay))
-        Log('parse', 'episode date: %s', str(self.episodeDate))
+        log('parse', 'episode date: %s', str(self.episodeDate))
 
     def episodeTitle(self):
         # get the episode title template
@@ -169,14 +170,14 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
         return [SERIES_DATE_REGEX_1, SERIES_DATE_REGEX_2]
     
     def setValues(self, match):
-        self.showTitle = match('show').strip()
-        self.episodeYear = match('year').strip()
-        self.episodeMonth = match('month').strip()
-        self.episodeDay = match('day').strip()
-        self.parsedEpisodeTitle = self.stripPart(match('title').strip())
+        self.showTitle = match.group('show').strip()
+        self.episodeYear = match.group('year').strip()
+        self.episodeMonth = match.group('month').strip()
+        self.episodeDay = match.group('day').strip()
+        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
         # Create the date
         self.episodeDate = datetime.datetime(int(self.episodeYear), int(self.episodeMonth), int(self.episodeDay))
-        Log('parse', 'episode date: %s', str(self.episodeDate))
+        log('parse', 'episode date: %s', str(self.episodeDate))
 
     def episodeTitle(self):
         # get the episode title template
@@ -190,16 +191,16 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
         context = {'episode_date': self.episodeDate, 'episode_title': self.parsedEpisodeTitle, 'show_title': self.showTitle}
         return self.formatTemplate(template, context)
 
-class EpisodeMediaParser(BaseMediaParser):
+class SeriesEpisodeMediaParser(BaseMediaParser):
     
     def getSupportedRegexes(self):
         return [SERIES_EPISODE_REGEX] 
     
     def setValues(self, match):
-        self.showTitle = match('show').strip()
-        self.episodeSeason = match('season').strip()
-        self.episodeNumber = match('episode').strip()
-        self.parsedEpisodeTitle = self.stripPart(match('title').strip())
+        self.showTitle = match.group('show').strip()
+        self.episodeSeason = match.group('season').strip()
+        self.episodeNumber = match.group('episode').strip()
+        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
             
     def episodeTitle(self):
         # get the episode title template
@@ -214,13 +215,12 @@ class EpisodeMediaParser(BaseMediaParser):
         return self.formatTemplate(template, context)
 
 # List of series parsers
-SERIES_PARSERS = [SeriesDateBasedMediaParser(), EpisodeMediaParser()]
+SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
 # List of movie parsers
 MOVIES_PARSERS = [MoviesDateBasedMediaParser()]
 
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME, MOVIE_AGENT_NAME)
-    test.test('Extended Personal Media - Scan')
     pass
 
 class ExtendedPersonalMediaAgentMovies(Agent.Movies):
@@ -234,10 +234,7 @@ class ExtendedPersonalMediaAgentMovies(Agent.Movies):
         log('search', 'media primary metadata: %s', str(media.primary_metadata))
         log('search', 'media primary agent: %s', str(media.primary_agent))
         log('search', 'media title: %s', str(media.title))
-        log('search', 'media show: %s', str(media.show))
         log('search', 'media name: %s', str(media.name))
-        log('search', 'media season: %s', str(media.season))
-        log('search', 'media episode: %s', str(media.episode))
    
         # Compute the GUID based on the media hash.
         part = media.items[0].parts[0]
@@ -256,6 +253,8 @@ class ExtendedPersonalMediaAgentMovies(Agent.Movies):
 
         # Get the filename and the mod time.
         filename = unicodize(media.items[0].parts[0].file)
+        absFilePath = os.path.abspath(filename)
+        log('update', 'absolute file path: %s', absFilePath)
 
         lastModifiedTimestamp = os.path.getmtime(filename)
         lastModifiedDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
@@ -263,7 +262,12 @@ class ExtendedPersonalMediaAgentMovies(Agent.Movies):
         # Fill in the little we can get from a file.
         try: title = os.path.splitext(os.path.basename(filename))[0]
         except: title = media.title
-          
+
+        log('update', 'metadata.title: %s', metadata.title)
+        log('update', 'metadata.summary: %s', metadata.summary)
+        log('update', 'metadata.year: %s', metadata.year)
+        log('update', 'metadata.originally_available_at: %s', metadata.originally_available_at)
+        
         # Set the default values based on the file attributes
         metadata.title = title
         metadata.summary = title
@@ -281,10 +285,10 @@ class ExtendedPersonalMediaAgentMovies(Agent.Movies):
                 metadata.year = parser.episodeDate.year
                 metadata.originally_available_at = parser.episodeDate
                 
-        log('update', 'metadata.title: %s', metadata.title)
-        log('update', 'metadata.summary: %s', metadata.summary)
-        log('update', 'metadata.year: %s', metadata.year)
-        log('update', 'metadata.originally_available_at: %s', metadata.originally_available_at)
+                log('update', 'after parse - metadata.title: %s', metadata.title)
+                log('update', 'after parse - metadata.summary: %s', metadata.summary)
+                log('update', 'after parse - metadata.year: %s', metadata.year)
+                log('update', 'after parse - metadata.originally_available_at: %s', metadata.originally_available_at)
 
 class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
     name = SERIES_AGENT_NAME
@@ -314,6 +318,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         results.Append(MetadataSearchResult(id=media.id, name=media.show, year=None, lang=lang, score=100))
 
     def update(self, metadata, media, lang):
+        #test.test('Extended Personal Media - Scan')
         log('update', 'metadata: %s', str(metadata))
         log('update', 'media: %s', str(media))
         log('update', 'lang: %s', str(lang))
@@ -341,8 +346,8 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                     log('update', 'parser %s contains match - parsing file path', parser)
                     parser.parse(absFilePath, lang)
                     
-                    episodeMetaData.title = parser.episodeTitle()  
-                    episodeMetaData.summary = parser.episodeSummary()
+                    episodeMetadata.title = parser.episodeTitle()  
+                    episodeMetadata.summary = parser.episodeSummary()
                     
-                    log('update', 'episode.title: %s', episodeMetaData.title)
-                    log('update', 'episode.summary: %s', episodeMetaData.summary)
+                    log('update', 'episode.title: %s', episodeMetadata.title)
+                    log('update', 'episode.summary: %s', episodeMetadata.summary)

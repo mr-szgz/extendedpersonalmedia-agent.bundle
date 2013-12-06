@@ -1,26 +1,9 @@
-import datetime, os, time, re, locale
+import datetime, os, time, re, locale, ConfigParser
 from string import Template
 #import test
 
 # Series agent name
 SERIES_AGENT_NAME = 'Extended Personal Media Shows'
-# Movies agent name
-MOVIE_AGENT_NAME = 'Extended Personal Media Movies'
-
-# Series date format regular expression (Show Title - 2012-09-19 - Episode Title)
-SERIES_DATE_REGEX_1 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-# Series date format regular expression (Show Title - 09-19-2013 - Episode Title)
-SERIES_DATE_REGEX_2 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[-\. ](?P<year>[0-9]{4})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-# Series episode format regular expression (Show title - s2012e0919 - Episode Title)
-SERIES_EPISODE_REGEX = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<dirSeason>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*[sS](?P<season>[0-9]*)[eE](?P<episode>[0-9]*)[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-
-# Series date format regular expression (Show Title - 2012-09-19 - Episode Title)
-MOVIES_DATE_REGEX_1 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-# Series date format regular expression (Show Title - 09-19-2013 - Episode Title)
-MOVIES_DATE_REGEX_2 = r'^(?P<baseDir>.*)[\\/](?P<dirShow>[^\\]+)[\\/](?P<show>.*)[ ]*[-\.][ ]*(?P<month>[0-9]{1,2})[-\. ](?P<day>[0-9]{1,2})[-\. ](?P<year>[0-9]{4})[ ]*[-\.][ ]*(?P<title>.*)\.(?P<ext>.*)$'
-
-# Episode name REGEX
-SERIES_EPISODE_TITLE_PART_REGEX = r'(?P<title>.*)[ ]*part|pt[0-9]'
 
 # Date template regex
 DATE_TEMPLATE_REGEX = r'(\$\{([_a-z][_a-z0-9]*[\|][^\}]*)\})'
@@ -45,6 +28,55 @@ def unicodize(s):
     log('unicodize', 'after unicodizing: %s', str(filename))
     return filename
 
+class CustomParserConfig(object):
+    '''
+        Finds the configuration for the specified file
+    '''
+    
+    def __init__(self, filePath):
+        self.filePath = filePath
+        self.config = ConfigParser.SafeConfigParser()
+        self.config.read(filePath)
+        
+    def fileNameRegex(self):
+        return self.config.get('parser', 'file.name.regex')
+
+class ConfigMap(object):
+    
+    def findCustomParser(self, rootDir, filePath):
+        customParser = None
+        
+        configFile = self.findConfigFile(rootDir, filePath)
+        if configFile is not None:
+            log('__init__', 'found config file %s for media file %s', configFile, filePath)
+            # Create the config
+            config = CustomParserConfig(configFile)
+            # and custom parser
+            customParser = CustomMediaParser(config)
+            
+        return customParser
+             
+    def findConfigFile(self, rootDir, filePath):
+        rootDirFound = False
+        parentDir = filePath
+        
+        # iterate over the directory
+        while not rootDirFound:
+            # Get the parent directory for the file
+            parentDir = os.path.dirname(parentDir)
+
+            log('findConfigFile', 'looking in parent directory %s', parentDir)
+            # create the file path
+            configFilePath = os.path.normcase(parentDir + '/ext-media.config')
+            log('findConfigFile', 'determining whether config file %s exists', configFilePath)
+            if os.path.exists(configFilePath) and os.path.isfile(configFilePath):
+                log('findConfigFile', 'config file %s exists', configFilePath)
+                return configFilePath
+
+            # check to see if this is the root dir
+            if parentDir == rootDir:
+                rootDirFound = True           
+            
 class BaseMediaParser(object):
     '''
         Parses the file name and determines the type of tile that was found
@@ -76,23 +108,19 @@ class BaseMediaParser(object):
         for regex in self.getSupportedRegexes():
             # Find out what file format is being used
             match = re.search(regex, mediaFile)
-            log('parse', 'matches: %s', match)
+            log('parse', 'regex %s - matches: %s', regex, match)
             if match:
                 log('parse', 'found matches')
                 self.setValues(match)
+
+                # Determine if the containing directory is numeric and 4 digits long - if so treat it like it's a year                
+                self.seasonYear = None
+                #match = re.search(YEAR_REGEX, self.seasonTitle)
+                #if match:
+                    #self.seasonYear = match.group('year')            
+
                 break
 
-    def stripPart(self, s):
-        retVal = s
-        # Test whether it contains part
-        match = re.search(SERIES_EPISODE_TITLE_PART_REGEX, retVal)
-        if match:
-            log('stripPart', 'title matched')
-            retVal = match.group('title').strip()
-                
-        log('stripPart', 'parsed episode title: %s', retVal)
-        return retVal
-        
     def formatTemplate(self, template, context=None):
         log('formatTemplate', 'template: %s', template)
         log('formatTemplate', 'context: %s', str(context))
@@ -131,53 +159,26 @@ class BaseMediaParser(object):
         log('formatTemplate', 'formatted template: %s', retVal)
         return retVal
         
-    def episodeTitle(self):
-        return self.parsedEpisodeTitle
-        
-    def episodeSummary(self):
-        return self.parsedEpisodeTitle
-      
-class MoviesDateBasedMediaParser(BaseMediaParser):
-    
-    def getSupportedRegexes(self):
-        return [MOVIES_DATE_REGEX_1, MOVIES_DATE_REGEX_2]
-    
-    def setValues(self, match):
-        self.showTitle = match.group('show').strip()
-        self.episodeYear = match.group('year').strip()
-        self.episodeMonth = match.group('month').strip()
-        self.episodeDay = match.group('day').strip()
-        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
-        # Create the date
-        self.episodeDate = datetime.datetime(int(self.episodeYear), int(self.episodeMonth), int(self.episodeDay))
-        log('parse', 'episode date: %s', str(self.episodeDate))
+    def getSeasonSummary(self):
+        return self.seasonSummary
 
-    def episodeTitle(self):
-        # get the episode title template
-        template = Prefs['date.parser.episode.title.template']
-        context = {'episode_date': self.episodeDate, 'episode_title': self.parsedEpisodeTitle, 'show_title': self.showTitle}
-        return self.formatTemplate(template, context)
-        
-    def episodeSummary(self):
-        # get the episode title summary
-        template = Prefs['date.parser.episode.summary.template']
-        context = {'episode_date': self.episodeDate, 'episode_title': self.parsedEpisodeTitle, 'show_title': self.showTitle}
-        return self.formatTemplate(template, context)
-        
+    def getEpisodeTitle(self):
+        return self.episodeTitle
+
+    def getEpisodeSummary(self):
+        return self.episodeSummary
+
 class SeriesDateBasedMediaParser(BaseMediaParser):
-    
+
     def getSupportedRegexes(self):
-        return [SERIES_DATE_REGEX_1, SERIES_DATE_REGEX_2]
+        return [
+                r'(?P<show>[^\\/]+)[\\/](?P<season>[0-9]+)[^\\/]*[\\/][^\\/]*(?P<year>[0-9]{4})[-\. ](?P<month>[0-9]{2})[-\. ](?P<day>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<title>.*)\.(?P<ext>.+)$' , #Show Title\2012\Show Title - 2012-09-19 - Episode Title.mp4, Show Title\2012\2012-09-19 - Episode Title.mp4
+                r'(?P<show>[^\\/]+)[\\/](?P<season>[0-9]+)[^\\/]*[\\/][^\\/]*(?P<month>[0-9]{2})[-\. ](?P<day>[0-9]{2})[-\. ](?P<year>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<title>.*)\.(?P<ext>.+)$' , #Show Title\2012\Show Title - 09-19-2013 - Episode Title.mp4, Show Title\2012\09-19-2013 - Episode Title.mp4
+                r'(?P<show>[^\\/]+)[\\/](?P<season>[0-9]{4})[\\/][^\\/]*(?P<month>[0-9]{2})[-\. ](?P<day>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<title>.*)\.(?P<ext>.+)$' #Show Title\2012\Show Title - 09-19 - Episode Title.mp4, Show Title\2012\09-19 - Episode Title.mp4
+                ]
     
     def setValues(self, match):
-        self.showTitle = match.group('show').strip()
-        self.episodeYear = match.group('year').strip()
-        self.episodeMonth = match.group('month').strip()
-        self.episodeDay = match.group('day').strip()
-        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
-        # Create the date
-        self.episodeDate = datetime.datetime(int(self.episodeYear), int(self.episodeMonth), int(self.episodeDay))
-        log('parse', 'episode date: %s', str(self.episodeDate))
+        self.episodeTitle = match.group('title').strip()
 
     def episodeTitle(self):
         # get the episode title template
@@ -194,14 +195,13 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
 class SeriesEpisodeMediaParser(BaseMediaParser):
     
     def getSupportedRegexes(self):
-        return [SERIES_EPISODE_REGEX] 
+        return [
+                r'(?P<show>[^\\/]+)[\\/](?P<season>[0-9]+)[^\\/]*[\\/][^\\/]*[eE](?P<episode>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<title>.*)\.(?P<ext>.+)$' #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4
+                ] 
     
     def setValues(self, match):
-        self.showTitle = match.group('show').strip()
-        self.episodeSeason = match.group('season').strip()
-        self.episodeNumber = match.group('episode').strip()
-        self.parsedEpisodeTitle = self.stripPart(match.group('title').strip())
-            
+        self.episodeTitle = match.group('title').strip()
+
     def episodeTitle(self):
         # get the episode title template
         template = Prefs['episode.parser.episode.title.template']
@@ -213,82 +213,50 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
         template = Prefs['episode.parser.episode.summary.template']
         context = {'episode_title': self.parsedEpisodeTitle, 'show_title': self.showTitle}
         return self.formatTemplate(template, context)
+  
+class SeriesSimpleMediaParser(BaseMediaParser):
+    
+    def getSupportedRegexes(self):
+        return [
+                r'(?P<show>[^\\/]+)[\\/](?P<season>[^\\/]+)[\\/](?P<title>[^\\/]+)\.(?P<ext>.+)$' #Show Title\Season Title\Episode Title.mp4
+                ] 
+    
+    def setValues(self, match):
+        self.episodeTitle = match.group('title').strip()
+
+class CustomMediaParser(BaseMediaParser):
+    
+    episodeMap = {}
+
+    def __init__(self, config):
+        self.parserConfig = config
+    
+    def getSupportedRegexes(self):
+        regexes = []
+        
+        # Check the config to see if a regex has been set
+        configRegex = self.parserConfig.fileNameRegex()
+        if configRegex is not None:
+            regexes.append(configRegex)
+            
+        # Add the simple regex as the fallback option
+        regexes.append(r'(?P<show>[^\\/]+)[\\/](?P<season>[^\\/]+)[\\/](?P<title>[^\\/]+)\.(?P<ext>.+)$')
+        log('CustomMediaParser.getSupportedRegexes', 'custom file name regexes in use %s', str(regexes))
+        
+        return regexes
+    
+    def setValues(self, match):
+        # Set all of the supported values
+        self.episodeTitle = match.group('title').strip()
 
 # List of series parsers
-SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
-# List of movie parsers
-MOVIES_PARSERS = [MoviesDateBasedMediaParser()]
+SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser(), SeriesSimpleMediaParser()]
+# Stores the configuration map
+CONFIG_MAP = ConfigMap()
 
 def Start():
-    log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME, MOVIE_AGENT_NAME)
+    log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
-
-class ExtendedPersonalMediaAgentMovies(Agent.Movies):
-    name = MOVIE_AGENT_NAME
-    languages = Locale.Language.All()
-    accepts_from = ['com.plexapp.agents.localmedia']
-    
-    def search(self, results, media, lang):
-        log('search', 'media id: %s', media.id)
-        log('search', 'media file name: %s', str(media.filename))
-        log('search', 'media primary metadata: %s', str(media.primary_metadata))
-        log('search', 'media primary agent: %s', str(media.primary_agent))
-        log('search', 'media title: %s', str(media.title))
-        log('search', 'media name: %s', str(media.name))
-   
-        # Compute the GUID based on the media hash.
-        part = media.items[0].parts[0]
-        
-        # Get the modification time to use as the year.
-        fileName = unicodize(part.file)
-        lastModifiedTimestamp = os.path.getmtime(fileName)
-        log('search', 'part.hash: %s', part.hash)
-        
-        results.Append(MetadataSearchResult(id=part.hash, name=media.name, year=time.localtime(lastModifiedTimestamp)[0], lang=lang, score=100))
-        
-    def update(self, metadata, media, lang):
-        log('update', 'metadata: %s', str(metadata))
-        log('update', 'media: %s', str(media))
-        log('update', 'lang: %s', str(lang))
-
-        # Get the filename and the mod time.
-        filename = unicodize(media.items[0].parts[0].file)
-        absFilePath = os.path.abspath(filename)
-        log('update', 'absolute file path: %s', absFilePath)
-
-        lastModifiedTimestamp = os.path.getmtime(filename)
-        lastModifiedDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
-        
-        # Fill in the little we can get from a file.
-        try: title = os.path.splitext(os.path.basename(filename))[0]
-        except: title = media.title
-
-        log('update', 'metadata.title: %s', metadata.title)
-        log('update', 'metadata.summary: %s', metadata.summary)
-        log('update', 'metadata.year: %s', metadata.year)
-        log('update', 'metadata.originally_available_at: %s', metadata.originally_available_at)
-        
-        # Set the default values based on the file attributes
-        metadata.title = title
-        metadata.summary = title
-        metadata.year = lastModifiedDate.year
-        metadata.originally_available_at = Datetime.ParseDate(str(lastModifiedDate)).date()
-        
-        # Iterate over the list of parsers and parse the file path
-        for parser in MOVIES_PARSERS:
-            if parser.containsMatch(absFilePath) is True:
-                log('update', 'parser %s contains match - parsing file path', parser)
-                parser.parse(absFilePath, lang)
-
-                metadata.title = parser.episodeTitle()
-                metadata.summary = parser.episodeSummary()
-                metadata.year = parser.episodeDate.year
-                metadata.originally_available_at = parser.episodeDate
-                
-                log('update', 'after parse - metadata.title: %s', metadata.title)
-                log('update', 'after parse - metadata.summary: %s', metadata.summary)
-                log('update', 'after parse - metadata.year: %s', metadata.year)
-                log('update', 'after parse - metadata.originally_available_at: %s', metadata.originally_available_at)
 
 class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
     name = SERIES_AGENT_NAME
@@ -339,6 +307,16 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             log('update', 'episode file path: %s', file)
             absFilePath = os.path.abspath(unicodize(file))
             log('update', 'absolute file path: %s', absFilePath)
+            
+            parsers = []
+            # Check the customParser map for this file
+            customParser = CONFIG_MAP.findCustomParser(absRootDir, absFilePath)
+            if customParser is not None:
+                # If we have a custom parser use only this parser on the file
+                parsers = [customParser]
+            else:
+                # We are using the default parsers
+                parsers = SERIES_PARSERS
             
             # Iterate over the list of parsers and parse the file path
             for parser in SERIES_PARSERS:

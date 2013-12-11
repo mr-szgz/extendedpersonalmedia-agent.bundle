@@ -115,7 +115,9 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
     def getSupportedRegexes(self):
         return [
                 r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012 - Season Title\Show Title - s2012e09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4, Show Title\2012\e09 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012 - Season Title\09 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4, Show Title\2012\e09 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' #Show Title\2012\09 - Episode Title.mp4
                 ] 
     
 class SeriesSimpleMediaParser(BaseMediaParser):
@@ -128,7 +130,7 @@ class SeriesSimpleMediaParser(BaseMediaParser):
                 ] 
 
 # List of series parsers
-SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser(), SeriesSimpleMediaParser()]
+SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
 
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
@@ -196,11 +198,11 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                     log('update', 'before setting season.summary: %s', seasonMetadata.summary)
                     seasonMetadata.summary = parser.getSeasonSummary()
                     log('update', 'season.summary: %s', seasonMetadata.summary)
-                    # set the episode data
-                    #episodeMetadata.title = parser.getEpisodeTitle()  
-                    episodeMetadata.summary = parser.getEpisodeSummary()
                     
-                    #log('update', 'episode.title: %s', episodeMetadata.title)
+                    # set the episode data
+                    episodeMetadata.title = parser.getEpisodeTitle()  
+                    episodeMetadata.summary = parser.getEpisodeSummary()
+                    log('update', 'episode.title: %s', episodeMetadata.title)
                     log('update', 'episode.summary: %s', episodeMetadata.summary)
                     
                     break

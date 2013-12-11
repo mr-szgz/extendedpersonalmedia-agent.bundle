@@ -103,32 +103,38 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
         return [
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/][^\\/]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , #Show Title\2012 - Season Title\Show Title - 2012-09-19 - Episode Title.mp4, Show Title\2012 - Season Title\2012-09-19 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})[\\/][^\\/]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , #Show Title\2012\Show Title - 2012-09-19 - Episode Title.mp4, Show Title\2012\2012-09-19 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/][^\\/]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , #Show Title\2012 - Season Title\Show Title - 09-19-2013 - Episode Title.mp4, Show Title\2012 - Season Title\09-19-2013 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})[\\/][^\\/]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , #Show Title\2012\Show Title - 09-19-2013 - Episode Title.mp4, Show Title\2012\09-19-2013 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/][^\\/]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' #Show Title\2012\Show Title - 09-19 - Episode Title.mp4, Show Title\2012\09-19 - Episode Title.mp4
+                #Show Title\2012 - Season Title\Show Title - 2012-09-19 - Episode Title.mp4
+                #Show Title\2012 - Season Title\2012-09-19 - Episode Title.mp4    
+                #Show Title\2012\Show Title - 2012-09-19 - Episode Title.mp4
+                #Show Title\2012\2012-09-19 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,1}[-\. ]+(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #Show Title\2012 - Season Title\Show Title - 09-19-2013 - Episode Title.mp4
+                #Show Title\2012 - Season Title\09-19-2013 - Episode Title.mp4
+                #Show Title\2012\Show Title - 09-19-2013 - Episode Title.mp4
+                #Show Title\2012\09-19-2013 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,1}[-\. ]+(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #Show Title\2012\Show Title - 09-19 - Episode Title.mp4
+                #Show Title\2012\09-19 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,1}[-\. ]+(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
     
 class SeriesEpisodeMediaParser(BaseMediaParser):
     
     def getSupportedRegexes(self):
         return [
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012 - Season Title\Show Title - s2012e09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012 - Season Title\09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$', #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4, Show Title\2012\e09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' #Show Title\2012\09 - Episode Title.mp4
+                #Show Title\01 - Season Title\Show Title - s2012e09 - Episode Title.mp4
+                #Show Title\01\Show Title - s2012e09 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Show Title\01 - Season Title\09 - Episode Title.mp4 
+                #Show Title\01\09 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4
+                #Show Title\2012\e09 - Episode Title.mp4 
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Show Title\2012\09 - Episode Title.mp4 
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' 
                 ] 
     
-class SeriesSimpleMediaParser(BaseMediaParser):
-    
-    def getSupportedRegexes(self):
-        return [
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)[-\. ]+(?P<seasonTitle>[^\\/]+)[\\/](?P<episodeTitle>[^\\/]+)\.(?P<ext>.+)$', #Show Title\2006 - Season Title\Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonTitle>[^\\/]+)[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>[^\\/]+)\.(?P<ext>.+)$', #Show Title\Season Title\exx - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonTitle>[^\\/]+)[\\/](?P<episodeTitle>[^\\/]+)\.(?P<ext>.+)$' #Show Title\Season Title\Episode Title.mp4
-                ] 
-
 # List of series parsers
 SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
 

@@ -4,8 +4,6 @@ from string import Template
 # Series agent name
 SERIES_AGENT_NAME = 'Extended Personal Media Shows'
 
-FILE_NAME_WITHOUT_EXT_REGEX = r'^(?P<fileWithoutExt>.*)\..+$'
-
 def log(methodName, message, *args):
     Log(methodName + ' :: ' + message, *args)
 
@@ -29,6 +27,27 @@ class BaseMediaParser(object):
         Parses the file name and determines the type of tile that was found
     '''
     
+    fileNameRegex = r'^(?P<fileWithoutExt>.*)\..+$'
+
+    # Episode name REGEX
+    partRegexes = [
+                    r'(?P<episodeTitle>.+)(\.[ ]*|-[ ]*)(part[0-9]+|pt[0-9]+)',
+                    r'(?P<episodeTitle>.+)([ ]+)(part[0-9]+|pt[0-9]+)'
+                    ]
+
+    def stripPart(self, episodeTitle):
+        processed = episodeTitle
+        # Test whether it contains part
+        for partRegex in self.partRegexes:
+            match = re.search(partRegex, processed)
+            if match:
+                log('stripPart', 'episode title %s contains part', processed)
+                processed = match.group('episodeTitle').strip()
+                log('stripPart', 'stripped episode title: %s', processed)
+                break
+                
+        return processed
+    
     def setValues(self, match):
         # set the season summary
         self.seasonSummary = None
@@ -36,13 +55,13 @@ class BaseMediaParser(object):
             self.seasonSummary = match.group('seasonTitle')
         
         # set the episode title
-        self.episodeTitle = match.group('episodeTitle').strip()
+        self.episodeTitle = self.stripPart(match.group('episodeTitle').strip())
         
         # set the episode summary
         self.episodeSummary = None
         # Get the summary file path
         # Find out what file format is being used
-        match = re.search(FILE_NAME_WITHOUT_EXT_REGEX, self.mediaFile)
+        match = re.search(self.fileNameRegex, self.mediaFile)
         if match:
             fileWithoutExt = match.group('fileWithoutExt').strip()
             log('setValues', 'file name without extension %s', fileWithoutExt)

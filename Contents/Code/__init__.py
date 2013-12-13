@@ -122,6 +122,12 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
         return [
+                # \Show Title - 2012-09-19_23 - Episode Title.mp4
+                # \Show.Title.2012.09.19_23.Episode.Title.mp4
+                r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                # \Show Title - 09-19-2012_23 - Episode Title.mp4
+                # \Show.Title.09.19.2012_23.Episode.Title.mp4
+                r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\2012 - Season Title\Show Title - 2012-09-19 - Episode Title.mp4
                 #Show Title\2012 - Season Title\2012-09-19 - Episode Title.mp4    
                 #Show Title\2012\Show Title - 2012-09-19 - Episode Title.mp4

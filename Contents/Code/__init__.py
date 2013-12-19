@@ -147,6 +147,8 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
     
     def getSupportedRegexes(self):
         return [
+                #\Show Title - s2012e09 - Episode Title.mp4
+                r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*[sS](?P<seasonNumber>[0-9]+)[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\01 - Season Title\Show Title - s2012e09 - Episode Title.mp4
                 #Show Title\01\Show Title - s2012e09 - Episode Title.mp4
                 r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*[eE](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',

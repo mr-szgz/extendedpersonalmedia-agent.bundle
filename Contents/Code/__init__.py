@@ -48,6 +48,22 @@ class BaseMediaParser(object):
                 
         return processed
     
+    def scrub(self, string):
+        processed = ''
+        matches = re.split(r'[\.\-_]+', string)
+        idx = 1
+        if matches is not None:
+            for match in matches:
+                processed = processed + match
+                if idx < len(matches):
+                    processed = processed + ' '
+                idx = idx + 1
+        else:
+            processed = string
+            
+        log('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
+        return processed
+    
     def setValues(self, match):
         # set the season summary
         self.seasonSummary = None
@@ -55,7 +71,7 @@ class BaseMediaParser(object):
             self.seasonSummary = match.group('seasonTitle')
         
         # set the episode title
-        self.episodeTitle = self.stripPart(match.group('episodeTitle').strip())
+        self.episodeTitle = self.scrub(self.stripPart(match.group('episodeTitle').strip()))
         
         # set the episode summary
         self.episodeSummary = None

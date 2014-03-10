@@ -85,12 +85,29 @@ class BaseMediaParser(object):
             log('setValues', 'looking for summary file %s', summaryFilePath)
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
+                summaryText = None
+                                
                 log('setValues', 'summary file exists - reading contents')
                 try:
+                    # Read the text from the file
                     summaryText = Core.storage.load(summaryFilePath, False)
-                    self.episodeSummary = summaryText.replace('\n', '')
                 except Exception as e:
                     log('setValues', 'error occurred reading contents of summary file %s : %s', summaryFilePath, e)
+                    
+                # try to decode the contents
+                summaryTextUnicode = None
+                try:
+                    # decode using the system default
+                    log('setValues', 'decoding string using utf-8 - not ignoring errors')
+                    summaryTextUnicode = unicode(summaryText, 'utf-8')
+                except Exception as e:
+                    log('setValues', 'could not decode contents of summary file %s : %s', summaryFilePath, e)
+                    # decode using utf-8 and ignore errors
+                    log('setValues', 'decoding string using utf-8 - ignoring errors')
+                    summaryTextUnicode = unicode(summaryText, 'utf-8', errors='ignore')
+                
+#                 summaryTextUnicode = summaryTextUnicode.replace('\n', '')
+                self.episodeSummary = summaryTextUnicode
             else:
                 log('setValues', 'summary file does not exist')
 

@@ -219,9 +219,6 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' 
                 ] 
     
-# List of series parsers
-SERIES_PARSERS = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
-
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
@@ -255,11 +252,14 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
 
     def update(self, metadata, media, lang):
         #test.test('Extended Personal Media - Scan')
+        log('update', 'meta data agent object id: %s', id(self))
         log('update', 'metadata: %s', str(metadata))
         log('update', 'media: %s', str(media))
         log('update', 'lang: %s', str(lang))
-        
+        # set the metadata title
         metadata.title = media.title
+        # list of series parsers
+        series_parsers = [SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
 
         for s in media.seasons:
           log('update', 'season %s', s)
@@ -279,8 +279,9 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             log('update', 'absolute file path: %s', absFilePath)
                   
             # Iterate over the list of parsers and parse the file path
-            for parser in SERIES_PARSERS:
+            for parser in series_parsers:
                 if parser.containsMatch(absFilePath) is True:
+                    log('update', 'parser object id: %s', id(parser))
                     log('update', 'parser %s contains match - parsing file path', parser)
                     parser.parse(absFilePath, lang)
                     

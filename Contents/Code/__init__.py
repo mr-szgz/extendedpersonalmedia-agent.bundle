@@ -37,6 +37,12 @@ class BaseMediaParser(object):
                     r'(?P<episodeTitle>.+)([ ]+)(part[0-9]+|pt[0-9]+)'
                     ]
 
+    def __init__(self):
+        self.showSummary = None
+        self.seasonSummary = None
+        self.episodeTitle = None
+        self.episodeSummary = None
+                    
     def stripPart(self, episodeTitle):
         processed = episodeTitle
         # Test whether it contains part
@@ -66,12 +72,7 @@ class BaseMediaParser(object):
         log('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
         return processed
     
-    def setValues(self, match):
-        # set the season summary
-        self.seasonSummary = None
-        if 'seasonTitle' in match.groupdict():
-            self.seasonSummary = match.group('seasonTitle')
-        
+    def setValues(self, mediaFile, match):
         # set the episode title
         self.episodeTitle = self.scrub(self.stripPart(match.group('episodeTitle').strip()))
         
@@ -79,7 +80,7 @@ class BaseMediaParser(object):
         self.episodeSummary = None
         # Get the summary file path
         # Find out what file format is being used
-        match = re.search(self.fileNameRegex, self.mediaFile)
+        match = re.search(self.fileNameRegex, mediaFile)
         if match:
             fileWithoutExt = match.group('fileWithoutExt').strip()
             log('setValues', 'file name without extension %s', fileWithoutExt)
@@ -87,32 +88,34 @@ class BaseMediaParser(object):
             log('setValues', 'looking for summary file %s', summaryFilePath)
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
-                summaryText = None
-                                
-                log('setValues', 'summary file exists - reading contents')
-                try:
-                    # Read the text from the file
-                    summaryText = Core.storage.load(summaryFilePath, False)
-                except Exception as e:
-                    log('setValues', 'error occurred reading contents of summary file %s : %s', summaryFilePath, e)
-                    
-                # try to decode the contents
-                summaryTextUnicode = None
-                try:
-                    # decode using the system default
-                    log('setValues', 'decoding string using utf-8 - not ignoring errors')
-                    summaryTextUnicode = unicode(summaryText, 'utf-8')
-                except Exception as e:
-                    log('setValues', 'could not decode contents of summary file %s : %s', summaryFilePath, e)
-                    # decode using utf-8 and ignore errors
-                    log('setValues', 'decoding string using utf-8 - ignoring errors')
-                    summaryTextUnicode = unicode(summaryText, 'utf-8', errors='ignore')
-                
-#                 summaryTextUnicode = summaryTextUnicode.replace('\n', '')
-                self.episodeSummary = summaryTextUnicode
+                self.episodeSummary = self.loadTextFromFile(summaryFilePath)
             else:
                 log('setValues', 'summary file does not exist')
 
+    def loadTextFromFile(self, filePath):
+        textUnicode = None
+        # If the file exists read in its contents
+        if os.path.exists(filePath) is True:
+            text = None
+            log('loadTextFromFile', 'file exists - reading contents')
+            try:
+                # Read the text from the file
+                text = Core.storage.load(filePath, False)
+            except Exception as e:
+                log('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
+                
+            # try to decode the contents
+            try:
+                # decode using the system default
+                log('loadTextFromFile', 'decoding string using utf-8 - not ignoring errors')
+                textUnicode = unicode(text, 'utf-8')
+            except Exception as e:
+                log('loadTextFromFile', 'could not decode contents of summary file %s : %s', filePath, e)
+                # decode using utf-8 and ignore errors
+                log('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
+                textUnicode = unicode(text, 'utf-8', errors='ignore')
+        
+        return textUnicode
 
     def getSupportedRegexes(self):
         return []
@@ -130,10 +133,7 @@ class BaseMediaParser(object):
         return retVal
         
 
-    def parse(self, mediaFile, lang):
-        self.mediaFile = mediaFile
-        self.lang = lang
-
+    def parse(self, mediaFile):
         # Iterate over the list of regular expressions
         for regex in self.getSupportedRegexes():
             # Find out what file format is being used
@@ -141,12 +141,61 @@ class BaseMediaParser(object):
             log('parse', 'regex %s - matches: %s', regex, match)
             if match:
                 log('parse', 'found matches')
-                self.setValues(match)
+                self.setValues(mediaFile, match)
                 break
   
-    def getSeasonSummary(self):
+    def findFile(self, filePath, fileName):
+        rootDirFound = False
+        parentDir = filePath
+
+        # Get the parent directory for the file
+        if os.path.isfile(filePath):
+            parentDir = os.path.dirname(parentDir)
+        
+        # iterate over the directory
+        while not rootDirFound:
+            log('findFile', 'looking in parent directory %s', parentDir)
+            # create the file path
+            pathToFind = os.path.normcase(parentDir + '/' + fileName)
+            log('findFile', 'determining whether file %s exists', pathToFind)
+            if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
+                log('findFile', 'file %s exists', pathToFind)
+                return pathToFind
+            else:
+                log('findFile', 'file %s does not exist', pathToFind)
+
+            # go up a directory
+            log('findFile', 'going up a directory')
+            newDir = os.path.normpath(parentDir + '/..')
+            log('findFile', 'new directory path %s', newDir)
+            # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
+            if newDir == parentDir:
+                rootDirFound = True 
+            else:
+                parentDir = newDir
+                
+        return None
+  
+    def getSeasonSummary(self, filePath, fileName):
+        filePath = self.findFile(filePath, fileName)
+        if filePath != None:
+            log('getSeasonSummary', 'found season summary file %s', filePath)
+            self.seasonSummary = self.loadTextFromFile(filePath)
+        else:
+            log('getSeasonSummary', 'season summary file not found')
+            
         return self.seasonSummary
 
+    def getShowSummary(self, filePath, fileName):
+        filePath = self.findFile(filePath, fileName)
+        if filePath != None:
+            log('getShowSummary', 'found file summary file %s', filePath)
+            self.showSummary = self.loadTextFromFile(filePath)
+        else:
+            log('getShowSummary', 'show summary file not found')
+            
+        return self.showSummary
+        
     def getEpisodeTitle(self):
         return self.episodeTitle
 
@@ -284,40 +333,62 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         metadata.title = media.title
         # list of series parsers
         series_parsers = [SeriesDatedEpisodeMediaParser(), SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
+        showTitle = metadata.title
+        foundShowSummary = False
 
         for s in media.seasons:
-          log('update', 'season %s', s)
-          seasonMetadata = metadata.seasons[s]
-          log('update', 'season metadata %s', seasonMetadata)
-          metadata.seasons[s].index = int(s)
-          for e in media.seasons[s].episodes:
-            log('update', 'episode: %s', e)
-            # Make sure metadata exists, and find sidecar media.
-            episodeMetadata = metadata.seasons[s].episodes[e]
-            log('update', 'episode metadata: %s', episodeMetadata)
-            episodeMedia = media.seasons[s].episodes[e].items[0]
-        
-            file = episodeMedia.parts[0].file
-            log('update', 'episode file path: %s', file)
-            absFilePath = os.path.abspath(unicodize(file))
-            log('update', 'absolute file path: %s', absFilePath)
-                  
-            # Iterate over the list of parsers and parse the file path
-            for parser in series_parsers:
-                if parser.containsMatch(absFilePath) is True:
-                    log('update', 'parser object id: %s', id(parser))
-                    log('update', 'parser %s contains match - parsing file path', parser)
-                    parser.parse(absFilePath, lang)
-                    
-                    # set the season data
-                    log('update', 'before setting season.summary: %s', seasonMetadata.summary)
-                    seasonMetadata.summary = parser.getSeasonSummary()
-                    log('update', 'season.summary: %s', seasonMetadata.summary)
-                    
-                    # set the episode data
-                    episodeMetadata.title = parser.getEpisodeTitle()  
-                    episodeMetadata.summary = parser.getEpisodeSummary()
-                    log('update', 'episode.title: %s', episodeMetadata.title)
-                    log('update', 'episode.summary: %s', episodeMetadata.summary)
-                    
-                    break
+            log('update', 'season %s', s)
+            seasonMetadata = metadata.seasons[s]
+            log('update', 'season metadata %s', seasonMetadata)
+            metadata.seasons[s].index = int(s)
+            foundSeasonSummary = False
+          
+            for e in media.seasons[s].episodes:
+                log('update', 'episode: %s', e)
+                # Make sure metadata exists, and find sidecar media.
+                episodeMetadata = metadata.seasons[s].episodes[e]
+                log('update', 'episode metadata: %s', episodeMetadata)
+                episodeMedia = media.seasons[s].episodes[e].items[0]
+            
+                file = episodeMedia.parts[0].file
+                log('update', 'episode file path: %s', file)
+                absFilePath = os.path.abspath(unicodize(file))
+                log('update', 'absolute file path: %s', absFilePath)
+                      
+                # Iterate over the list of parsers and parse the file path
+                for parser in series_parsers:
+                    if parser.containsMatch(absFilePath) is True:
+                        log('update', 'parser object id: %s', id(parser))
+                        log('update', 'parser %s contains match - parsing file path', parser)
+                        parser.parse(absFilePath)
+                        
+                        # set the episode data
+                        episodeMetadata.title = parser.getEpisodeTitle()  
+                        episodeMetadata.summary = parser.getEpisodeSummary()
+                        log('update', 'episode.title: %s', episodeMetadata.title)
+                        log('update', 'episode.summary: %s', episodeMetadata.summary)
+                        
+                        # Check for show summary
+                        if foundShowSummary is False:
+                            showSummary = parser.getShowSummary(absFilePath, showTitle + '.summary')
+                            # set the show summary
+                            if showSummary != None:
+                                metadata.summary = showSummary
+                                log('update', 'show.summary: %s', metadata.summary)
+                                foundShowSummary = True
+
+                        # Check for season summary
+                        if foundSeasonSummary is False:
+                            # set the season summary
+                            seasonSummary = parser.getSeasonSummary(absFilePath, showTitle + '-S' + s + '.summary')
+                            if seasonSummary != None:
+                                seasonMetadata.summary = seasonSummary
+                                log('update', 'season.summary: %s', seasonMetadata.summary)
+                                foundSeasonSummary = True
+                                                    
+                        break
+                    #endif
+                #endfor - parsers
+            #endfor - episodes
+        #endfor - seasons
+    #enddfe

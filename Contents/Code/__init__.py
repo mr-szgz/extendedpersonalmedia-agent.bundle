@@ -166,10 +166,11 @@ class BaseMediaParser(object):
 
             # go up a directory
             log('findFile', 'going up a directory')
-            newDir = os.path.normpath(parentDir + '/..')
+            newDir = os.path.abspath(parentDir + '/..')
             log('findFile', 'new directory path %s', newDir)
             # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
             if newDir == parentDir:
+                log('findFile', 'root directory %s found - stopping directory traversal', newDir)
                 rootDirFound = True 
             else:
                 parentDir = newDir

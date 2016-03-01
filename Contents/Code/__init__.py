@@ -6,6 +6,10 @@ from string import Template
 # Series agent name
 SERIES_AGENT_NAME = 'Extended Personal Media Shows'
 
+def logDebug(methodName, message, *args):
+    if bool(Prefs['logger.debug.enabled']):
+        Log(methodName + ' :: ' + message, *args)
+    
 def log(methodName, message, *args):
     Log(methodName + ' :: ' + message, *args)
 
@@ -17,11 +21,11 @@ def log(methodName, message, *args):
 def unicodize(s):
     filename = s
     
-    log('unicodize', 'before unicodizing: %s', str(filename))
+    logDebug('unicodize', 'before unicodizing: %s', str(filename))
     if os.path.supports_unicode_filenames:
         try: filename = unicode(s.decode('utf-8'))
         except: pass
-    log('unicodize', 'after unicodizing: %s', str(filename))
+    logDebug('unicodize', 'after unicodizing: %s', str(filename))
     return filename
       
 class BaseMediaParser(object):
@@ -49,9 +53,9 @@ class BaseMediaParser(object):
         for partRegex in self.partRegexes:
             match = re.search(partRegex, processed)
             if match:
-                log('stripPart', 'episode title %s contains part', processed)
+                logDebug('stripPart', 'episode title %s contains part', processed)
                 processed = match.group('episodeTitle').strip()
-                log('stripPart', 'stripped episode title: %s', processed)
+                logDebug('stripPart', 'stripped episode title: %s', processed)
                 break
                 
         return processed
@@ -69,7 +73,7 @@ class BaseMediaParser(object):
         else:
             processed = string
             
-        log('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
+        logDebug('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
         return processed
     
     def setValues(self, mediaFile, match):
@@ -83,36 +87,37 @@ class BaseMediaParser(object):
         match = re.search(self.fileNameRegex, mediaFile)
         if match:
             fileWithoutExt = match.group('fileWithoutExt').strip()
-            log('setValues', 'file name without extension %s', fileWithoutExt)
+            logDebug('setValues', 'file name without extension %s', fileWithoutExt)
             summaryFilePath = fileWithoutExt + '.summary'
-            log('setValues', 'looking for summary file %s', summaryFilePath)
+            logDebug('setValues', 'looking for summary file %s', summaryFilePath)
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
+                log('setValues', 'episode summary file %s exists', summaryFilePath)
                 self.episodeSummary = self.loadTextFromFile(summaryFilePath)
             else:
-                log('setValues', 'summary file does not exist')
+                log('setValues', 'episode summary file does not exist')
 
     def loadTextFromFile(self, filePath):
         textUnicode = None
         # If the file exists read in its contents
         if os.path.exists(filePath) is True:
             text = None
-            log('loadTextFromFile', 'file exists - reading contents')
+            logDebug('loadTextFromFile', 'file exists - reading contents')
             try:
                 # Read the text from the file
                 text = Core.storage.load(filePath, False)
             except Exception as e:
-                log('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
+                logDebug('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
                 
             # try to decode the contents
             try:
                 # decode using the system default
-                log('loadTextFromFile', 'decoding string using utf-8 - not ignoring errors')
+                logDebug('loadTextFromFile', 'decoding string using utf-8 - not ignoring errors')
                 textUnicode = unicode(text, 'utf-8')
             except Exception as e:
-                log('loadTextFromFile', 'could not decode contents of summary file %s : %s', filePath, e)
+                logDebug('loadTextFromFile', 'could not decode contents of summary file %s : %s', filePath, e)
                 # decode using utf-8 and ignore errors
-                log('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
+                logDebug('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
                 textUnicode = unicode(text, 'utf-8', errors='ignore')
         
         return textUnicode
@@ -138,13 +143,13 @@ class BaseMediaParser(object):
         for regex in self.getSupportedRegexes():
             # Find out what file format is being used
             match = re.search(regex, mediaFile, re.IGNORECASE)
-            log('parse', 'regex %s - matches: %s', regex, match)
+            logDebug('parse', 'regex %s - matches: %s', regex, match)
             if match:
-                log('parse', 'found matches')
+                logDebug('parse', 'found matches')
                 self.setValues(mediaFile, match)
                 break
   
-    def findFile(self, filePath, fileName):
+    def findFile(self, filePath, fileNames):
         rootDirFound = False
         parentDir = filePath
 
@@ -154,45 +159,49 @@ class BaseMediaParser(object):
         
         # iterate over the directory
         while not rootDirFound:
-            log('findFile', 'looking in parent directory %s', parentDir)
+            logDebug('findFile', 'looking in parent directory %s', parentDir)
             # create the file path
-            pathToFind = os.path.normcase(parentDir + '/' + fileName)
-            log('findFile', 'determining whether file %s exists', pathToFind)
-            if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
-                log('findFile', 'file %s exists', pathToFind)
-                return pathToFind
-            else:
-                log('findFile', 'file %s does not exist', pathToFind)
+            for fileName in fileNames:
+                pathToFind = os.path.normcase(parentDir + '/' + fileName)
+                logDebug('findFile', 'determining whether file %s exists', pathToFind)
+                if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
+                    logDebug('findFile', 'file %s exists', pathToFind)
+                    return pathToFind
+                else:
+                    logDebug('findFile', 'file %s does not exist', pathToFind)
 
             # go up a directory
-            log('findFile', 'going up a directory')
-            newDir = os.path.normpath(parentDir + '/..')
-            log('findFile', 'new directory path %s', newDir)
+            logDebug('findFile', 'going up a directory')
+            newDir = os.path.abspath(parentDir + '/..')
+            logDebug('findFile', 'new directory path %s', newDir)
             # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
             if newDir == parentDir:
+                logDebug('findFile', 'root directory %s found - stopping directory traversal', newDir)
                 rootDirFound = True 
             else:
                 parentDir = newDir
                 
         return None
   
-    def getSeasonSummary(self, filePath, fileName):
-        filePath = self.findFile(filePath, fileName)
+    def findSeasonSummary(self, filePath, fileNames):
+        logDebug('findSeasonSummary', 'looking for files with names: %s', str(fileNames))
+        filePath = self.findFile(filePath, fileNames)
         if filePath != None:
-            log('getSeasonSummary', 'found season summary file %s', filePath)
+            log('findSeasonSummary', 'found season summary file %s', filePath)
             self.seasonSummary = self.loadTextFromFile(filePath)
         else:
-            log('getSeasonSummary', 'season summary file not found')
+            log('findSeasonSummary', 'season summary file not found')
             
         return self.seasonSummary
 
-    def getShowSummary(self, filePath, fileName):
-        filePath = self.findFile(filePath, fileName)
+    def findShowSummary(self, filePath, fileNames):
+        logDebug('findShowSummary', 'looking for files with names: %s', str(fileNames))
+        filePath = self.findFile(filePath, fileNames)
         if filePath != None:
-            log('getShowSummary', 'found file summary file %s', filePath)
+            log('findShowSummary', 'found file summary file %s', filePath)
             self.showSummary = self.loadTextFromFile(filePath)
         else:
-            log('getShowSummary', 'show summary file not found')
+            log('findShowSummary', 'show summary file not found')
             
         return self.showSummary
         
@@ -302,15 +311,15 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
     accepts_from = ['com.plexapp.agents.localmedia']
 
     def search(self, results, media, lang):
-        log('search', 'media id: %s', media.id)
-        log('search', 'media file name: %s', str(media.filename))
-        log('search', 'media primary metadata: %s', str(media.primary_metadata))
-        log('search', 'media primary agent: %s', str(media.primary_agent))
-        log('search', 'media title: %s', str(media.title))
-        log('search', 'media show: %s', str(media.show))
-        log('search', 'media name: %s', str(media.name))
-        log('search', 'media season: %s', str(media.season))
-        log('search', 'media episode: %s', str(media.episode))
+        logDebug('search', 'media id: %s', media.id)
+        logDebug('search', 'media file name: %s', str(media.filename))
+        logDebug('search', 'media primary metadata: %s', str(media.primary_metadata))
+        logDebug('search', 'media primary agent: %s', str(media.primary_agent))
+        logDebug('search', 'media title: %s', str(media.title))
+        logDebug('search', 'media show: %s', str(media.show))
+        logDebug('search', 'media name: %s', str(media.name))
+        logDebug('search', 'media season: %s', str(media.season))
+        logDebug('search', 'media episode: %s', str(media.episode))
         
         # Compute the GUID based on the media hash.
         try:
@@ -325,10 +334,10 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
 
     def update(self, metadata, media, lang):
         #test.test('Extended Personal Media - Scan')
-        log('update', 'meta data agent object id: %s', id(self))
-        log('update', 'metadata: %s', str(metadata))
-        log('update', 'media: %s', str(media))
-        log('update', 'lang: %s', str(lang))
+        logDebug('update', 'meta data agent object id: %s', id(self))
+        logDebug('update', 'metadata: %s', str(metadata))
+        logDebug('update', 'media: %s', str(media))
+        logDebug('update', 'lang: %s', str(lang))
         # set the metadata title
         metadata.title = media.title
         # list of series parsers
@@ -337,21 +346,21 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         foundShowSummary = False
 
         for s in media.seasons:
-            log('update', 'season %s', s)
+            logDebug('update', 'season %s', s)
             seasonMetadata = metadata.seasons[s]
-            log('update', 'season metadata %s', seasonMetadata)
+            logDebug('update', 'season metadata %s', seasonMetadata)
             metadata.seasons[s].index = int(s)
             foundSeasonSummary = False
           
             for e in media.seasons[s].episodes:
-                log('update', 'episode: %s', e)
+                logDebug('update', 'episode: %s', e)
                 # Make sure metadata exists, and find sidecar media.
                 episodeMetadata = metadata.seasons[s].episodes[e]
-                log('update', 'episode metadata: %s', episodeMetadata)
+                logDebug('update', 'episode metadata: %s', episodeMetadata)
                 episodeMedia = media.seasons[s].episodes[e].items[0]
             
                 file = episodeMedia.parts[0].file
-                log('update', 'episode file path: %s', file)
+                logDebug('update', 'episode file path: %s', file)
                 absFilePath = os.path.abspath(unicodize(file))
                 log('update', 'absolute file path: %s', absFilePath)
                       
@@ -370,7 +379,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         
                         # Check for show summary
                         if foundShowSummary is False:
-                            showSummary = parser.getShowSummary(absFilePath, showTitle + '.summary')
+                            showSummary = parser.findShowSummary(absFilePath, [showTitle + '.summary', 'show.summary'])
                             # set the show summary
                             if showSummary != None:
                                 metadata.summary = showSummary
@@ -380,7 +389,8 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         # Check for season summary
                         if foundSeasonSummary is False:
                             # set the season summary
-                            seasonSummary = parser.getSeasonSummary(absFilePath, showTitle + '-S' + s + '.summary')
+                            seasonFileNames = [showTitle + '-S' + s + '.summary', showTitle + '-s' + s + '.summary', showTitle + '-C' + s + '.summary', showTitle + '-c' + s + '.summary', 'season-' + s + '.summary', 'chapter-' + s + '.summary', 'S' + s + '.summary', 's' + s + '.summary', 'C' + s + '.summary', 'c' + s + '.summary']
+                            seasonSummary = parser.findSeasonSummary(absFilePath, seasonFileNames)
                             if seasonSummary != None:
                                 seasonMetadata.summary = seasonSummary
                                 log('update', 'season.summary: %s', seasonMetadata.summary)

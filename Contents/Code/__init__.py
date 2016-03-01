@@ -367,7 +367,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                 # Iterate over the list of parsers and parse the file path
                 for parser in series_parsers:
                     if parser.containsMatch(absFilePath) is True:
-                        log('update', 'parser object id: %s', id(parser))
+                        logDebug('update', 'parser object id: %s', id(parser))
                         log('update', 'parser %s contains match - parsing file path', parser)
                         parser.parse(absFilePath)
                         

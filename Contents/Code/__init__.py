@@ -27,7 +27,111 @@ def unicodize(s):
         except: pass
     logDebug('unicodize', 'after unicodizing: %s', str(filename))
     return filename
-      
+
+def findFile(filePaths, fileNames):
+    '''
+    Find one of the specified file names in the list starting at the lowest directory passed in and
+    walking up the directory tree until the root directory is found or one of the files in the list is found
+    '''
+    for filePath in filePaths:    
+        rootDirFound = False
+        parentDir = filePath
+
+        # Get the parent directory for the file
+        if os.path.isfile(filePath):
+            parentDir = os.path.dirname(parentDir)
+        
+        # iterate over the directory
+        while not rootDirFound:
+            logDebug('findFile', 'looking in parent directory %s', parentDir)
+            # create the file path
+            for fileName in fileNames:
+                pathToFind = os.path.normcase(parentDir + '/' + fileName)
+                logDebug('findFile', 'determining whether file %s exists', pathToFind)
+                if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
+                    logDebug('findFile', 'file %s exists', pathToFind)
+                    return pathToFind
+                else:
+                    logDebug('findFile', 'file %s does not exist', pathToFind)
+
+            # go up a directory
+            logDebug('findFile', 'going up a directory')
+            newDir = os.path.abspath(parentDir + '/..')
+            logDebug('findFile', 'new directory path %s', newDir)
+            # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
+            if newDir == parentDir:
+                logDebug('findFile', 'root directory %s found - stopping directory traversal', newDir)
+                rootDirFound = True 
+            else:
+                parentDir = newDir
+            
+    return None
+
+def isSubdir(path, directory):
+    '''
+    Returns true if *path* in a subdirectory of *directory*.
+    '''
+    if len(path) > len(directory):
+        sep = os.path.sep.encode('ascii') if isinstance(directory, bytes) else os.path.sep
+        dirComp = directory.rstrip(sep) + sep
+        logDebug('isSubdir','comparing [%s] to [%s]', path, dirComp)
+        if path.startswith(dirComp):
+            logDebug('isSubdir', 'path is a subdirectory')
+            return True
+    return False
+    
+def loadTextFromFile(filePath):
+    '''
+    Load the text text from the specified file
+    '''
+    textUnicode = None
+    # If the file exists read in its contents
+    if os.path.exists(filePath) is True:
+        text = None
+        logDebug('loadTextFromFile', 'file exists - reading contents')
+        try:
+            # Read the text from the file
+            text = Core.storage.load(filePath, False)
+        except Exception as e:
+            logDebug('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
+            
+        # try to decode the contents
+        try:
+            # decode using the system default
+            logDebug('loadTextFromFile', 'decoding string using utf-8 - not ignoring errors')
+            textUnicode = unicode(text, 'utf-8')
+        except Exception as e:
+            logDebug('loadTextFromFile', 'could not decode contents of summary file %s : %s', filePath, e)
+            # decode using utf-8 and ignore errors
+            logDebug('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
+            textUnicode = unicode(text, 'utf-8', errors='ignore')
+    
+    return textUnicode
+
+def findSeasonSummary(filePaths, fileNames):
+    seasonSummary = None
+    logDebug('findSeasonSummary', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
+    filePath = findFile(filePaths, fileNames)
+    if filePath != None:
+        log('findSeasonSummary', 'found season summary file %s', filePath)
+        seasonSummary = loadTextFromFile(filePath)
+    else:
+        log('findSeasonSummary', 'season summary file not found')
+        
+    return seasonSummary
+
+def findShowSummary(filePaths, fileNames):
+    showSummary = None
+    logDebug('findShowSummary', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
+    filePath = findFile(filePaths, fileNames)
+    if filePath != None:
+        log('findShowSummary', 'found show summary file %s', filePath)
+        showSummary = loadTextFromFile(filePath)
+    else:
+        log('findShowSummary', 'show summary file not found')
+        
+    return showSummary
+
 class BaseMediaParser(object):
     '''
         Parses the file name and determines the type of tile that was found
@@ -93,34 +197,9 @@ class BaseMediaParser(object):
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
                 log('setValues', 'episode summary file %s exists', summaryFilePath)
-                self.episodeSummary = self.loadTextFromFile(summaryFilePath)
+                self.episodeSummary = loadTextFromFile(summaryFilePath)
             else:
                 log('setValues', 'episode summary file does not exist')
-
-    def loadTextFromFile(self, filePath):
-        textUnicode = None
-        # If the file exists read in its contents
-        if os.path.exists(filePath) is True:
-            text = None
-            logDebug('loadTextFromFile', 'file exists - reading contents')
-            try:
-                # Read the text from the file
-                text = Core.storage.load(filePath, False)
-            except Exception as e:
-                logDebug('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
-                
-            # try to decode the contents
-            try:
-                # decode using the system default
-                logDebug('loadTextFromFile', 'decoding string using utf-8 - not ignoring errors')
-                textUnicode = unicode(text, 'utf-8')
-            except Exception as e:
-                logDebug('loadTextFromFile', 'could not decode contents of summary file %s : %s', filePath, e)
-                # decode using utf-8 and ignore errors
-                logDebug('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
-                textUnicode = unicode(text, 'utf-8', errors='ignore')
-        
-        return textUnicode
 
     def getSupportedRegexes(self):
         return []
@@ -149,62 +228,6 @@ class BaseMediaParser(object):
                 self.setValues(mediaFile, match)
                 break
   
-    def findFile(self, filePath, fileNames):
-        rootDirFound = False
-        parentDir = filePath
-
-        # Get the parent directory for the file
-        if os.path.isfile(filePath):
-            parentDir = os.path.dirname(parentDir)
-        
-        # iterate over the directory
-        while not rootDirFound:
-            logDebug('findFile', 'looking in parent directory %s', parentDir)
-            # create the file path
-            for fileName in fileNames:
-                pathToFind = os.path.normcase(parentDir + '/' + fileName)
-                logDebug('findFile', 'determining whether file %s exists', pathToFind)
-                if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
-                    logDebug('findFile', 'file %s exists', pathToFind)
-                    return pathToFind
-                else:
-                    logDebug('findFile', 'file %s does not exist', pathToFind)
-
-            # go up a directory
-            logDebug('findFile', 'going up a directory')
-            newDir = os.path.abspath(parentDir + '/..')
-            logDebug('findFile', 'new directory path %s', newDir)
-            # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
-            if newDir == parentDir:
-                logDebug('findFile', 'root directory %s found - stopping directory traversal', newDir)
-                rootDirFound = True 
-            else:
-                parentDir = newDir
-                
-        return None
-  
-    def findSeasonSummary(self, filePath, fileNames):
-        logDebug('findSeasonSummary', 'looking for files with names: %s', str(fileNames))
-        filePath = self.findFile(filePath, fileNames)
-        if filePath != None:
-            log('findSeasonSummary', 'found season summary file %s', filePath)
-            self.seasonSummary = self.loadTextFromFile(filePath)
-        else:
-            log('findSeasonSummary', 'season summary file not found')
-            
-        return self.seasonSummary
-
-    def findShowSummary(self, filePath, fileNames):
-        logDebug('findShowSummary', 'looking for files with names: %s', str(fileNames))
-        filePath = self.findFile(filePath, fileNames)
-        if filePath != None:
-            log('findShowSummary', 'found file summary file %s', filePath)
-            self.showSummary = self.loadTextFromFile(filePath)
-        else:
-            log('findShowSummary', 'show summary file not found')
-            
-        return self.showSummary
-        
     def getEpisodeTitle(self):
         return self.episodeTitle
 
@@ -343,15 +366,15 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         # list of series parsers
         series_parsers = [SeriesDatedEpisodeMediaParser(), SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
         showTitle = metadata.title
-        foundShowSummary = False
-
+        # list of file paths
+        showFilePaths = []
         for s in media.seasons:
             logDebug('update', 'season %s', s)
             seasonMetadata = metadata.seasons[s]
             logDebug('update', 'season metadata %s', seasonMetadata)
             metadata.seasons[s].index = int(s)
-            foundSeasonSummary = False
-          
+            seasonFilePaths = []
+            
             for e in media.seasons[s].episodes:
                 logDebug('update', 'episode: %s', e)
                 # Make sure metadata exists, and find sidecar media.
@@ -377,28 +400,60 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         log('update', 'episode.title: %s', episodeMetadata.title)
                         log('update', 'episode.summary: %s', episodeMetadata.summary)
                         
-                        # Check for show summary
-                        if foundShowSummary is False:
-                            showSummary = parser.findShowSummary(absFilePath, [showTitle + '.summary', 'show.summary'])
-                            # set the show summary
-                            if showSummary != None:
-                                metadata.summary = showSummary
-                                log('update', 'show.summary: %s', metadata.summary)
-                                foundShowSummary = True
-
-                        # Check for season summary
-                        if foundSeasonSummary is False:
-                            # set the season summary
-                            seasonFileNames = [showTitle + '-S' + s + '.summary', showTitle + '-s' + s + '.summary', showTitle + '-C' + s + '.summary', showTitle + '-c' + s + '.summary', 'season-' + s + '.summary', 'chapter-' + s + '.summary', 'S' + s + '.summary', 's' + s + '.summary', 'C' + s + '.summary', 'c' + s + '.summary']
-                            seasonSummary = parser.findSeasonSummary(absFilePath, seasonFileNames)
-                            if seasonSummary != None:
-                                seasonMetadata.summary = seasonSummary
-                                log('update', 'season.summary: %s', seasonMetadata.summary)
-                                foundSeasonSummary = True
-                                                    
+                        # add the file path to the season file path list
+                        seasonFilePaths = self.addFilePath(seasonFilePaths, absFilePath)
+                        # add the file path to the show file path list
+                        showFilePaths = self.addFilePath(showFilePaths, absFilePath)
+                        
                         break
-                    #endif
-                #endfor - parsers
-            #endfor - episodes
-        #endfor - seasons
-    #enddfe
+
+            # Check for season summary
+            seasonFileNames = [showTitle + '-S' + s + '.summary', showTitle + '-s' + s + '.summary', showTitle + '-C' + s + '.summary', showTitle + '-c' + s + '.summary', 'season-' + s + '.summary', 'chapter-' + s + '.summary', 'S' + s + '.summary', 's' + s + '.summary', 'C' + s + '.summary', 'c' + s + '.summary']
+            seasonSummary = findSeasonSummary(seasonFilePaths, seasonFileNames)
+            if seasonSummary != None:
+                seasonMetadata.summary = seasonSummary
+                log('update', 'season.summary: %s', seasonMetadata.summary)
+
+
+        # Check for show summary
+        showSummary = findShowSummary(showFilePaths, [showTitle + '.summary', 'show.summary'])
+        if showSummary != None:
+            metadata.summary = showSummary
+            log('update', 'show.summary: %s', metadata.summary)
+
+
+    def addFilePath(self, filePaths, newFilePath):
+        '''
+        Adds the specified file path to the list if it is a sub-directory or a unique file path
+        '''
+        evalPaths = []
+    
+        newDirPath = newFilePath
+        if os.path.isfile(newDirPath):
+            newDirPath = os.path.dirname(newDirPath)
+        # determine if the new path is a sub-path or a new path
+        logDebug('addFilePath', 'verifying file path [%s] should be added', newDirPath)
+        appendPath = True
+        for path in filePaths:
+            path = os.path.normpath(os.path.normcase(path))
+            logDebug('addFilePath', 'existing path [%s]', path)
+            newDirPath = os.path.normpath(os.path.normcase(newDirPath))
+            logDebug('addFilePath', 'new path [%s]', newDirPath)
+            if newDirPath == path:
+                logDebug('addFilePath', 'paths are equivalent - keeping existing path [%s]', path)
+                evalPaths.append(path)
+                appendPath = False
+            elif newDirPath.startswith(path):
+                logDebug('addFilePath', 'path [%s] is a subdirectory of [%s] - keeping new path [%s]', newDirPath, path, newDirPath)
+                evalPaths.append(newDirPath)
+                appendPath = False
+            else:
+                logDebug('addFilePath', 'keeping existing path [%s]', newDirPath)
+                evalPaths.append(path)
+                
+        # path is a new path - keep it
+        if appendPath:
+            logDebug('addFilePath', 'keeping new path [%s]', newDirPath)
+            evalPaths.append(newDirPath)
+            
+        return evalPaths

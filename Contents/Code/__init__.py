@@ -46,7 +46,7 @@ def findFile(filePaths, fileNames):
             logDebug('findFile', 'looking in parent directory %s', parentDir)
             # create the file path
             for fileName in fileNames:
-                pathToFind = os.path.normcase(parentDir + '/' + fileName)
+                pathToFind = os.path.normpath(os.path.normcase(parentDir + '/' + fileName))
                 logDebug('findFile', 'determining whether file %s exists', pathToFind)
                 if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
                     logDebug('findFile', 'file %s exists', pathToFind)

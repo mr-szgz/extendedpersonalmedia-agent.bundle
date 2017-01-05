@@ -1,4 +1,4 @@
-# Version Date: 2016-01-02
+# Version Date: 2017-01-05
 
 import datetime, os, sys, time, re, locale, ConfigParser
 from string import Template
@@ -9,18 +9,18 @@ SERIES_AGENT_NAME = 'Extended Personal Media Shows'
 def logDebug(methodName, message, *args):
     if bool(Prefs['logger.debug.enabled']):
         Log(methodName + ' :: ' + message, *args)
-    
+
 def log(methodName, message, *args):
     Log(methodName + ' :: ' + message, *args)
 
 # Only use unicode if it's supported, which it is on Windows and OS X,
 # but not Linux. This allows things to work with non-ASCII characters
-# without having to go through a bunch of work to ensure the Linux 
+# without having to go through a bunch of work to ensure the Linux
 # filesystem is UTF-8 "clean".
 #
 def unicodize(s):
     filename = s
-    
+
     logDebug('unicodize', 'before unicodizing: %s', str(filename))
     if os.path.supports_unicode_filenames:
         try: filename = unicode(s.decode('utf-8'))
@@ -33,20 +33,20 @@ def findFile(filePaths, fileNames):
     Find one of the specified file names in the list starting at the lowest directory passed in and
     walking up the directory tree until the root directory is found or one of the files in the list is found
     '''
-    for filePath in filePaths:    
+    for filePath in filePaths:
         rootDirFound = False
         parentDir = filePath
 
         # Get the parent directory for the file
         if os.path.isfile(filePath):
             parentDir = os.path.dirname(parentDir)
-        
+
         # iterate over the directory
         while not rootDirFound:
             logDebug('findFile', 'looking in parent directory %s', parentDir)
             # create the file path
             for fileName in fileNames:
-                pathToFind = os.path.normpath(os.path.normcase(parentDir + '/' + fileName))
+                pathToFind = os.path.normpath(os.path.normcase(os.path.join(parentDir, fileName)))
                 logDebug('findFile', 'determining whether file %s exists', pathToFind)
                 if os.path.exists(pathToFind) and os.path.isfile(pathToFind):
                     logDebug('findFile', 'file %s exists', pathToFind)
@@ -56,15 +56,16 @@ def findFile(filePaths, fileNames):
 
             # go up a directory
             logDebug('findFile', 'going up a directory')
-            newDir = os.path.abspath(parentDir + '/..')
+            newDir = os.path.abspath(os.path.join(os.path.dirname( parentDir ), os.pardir))
+
             logDebug('findFile', 'new directory path %s', newDir)
             # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file
             if newDir == parentDir:
                 logDebug('findFile', 'root directory %s found - stopping directory traversal', newDir)
-                rootDirFound = True 
+                rootDirFound = True
             else:
                 parentDir = newDir
-            
+
     return None
 
 def isSubdir(path, directory):
@@ -79,7 +80,7 @@ def isSubdir(path, directory):
             logDebug('isSubdir', 'path is a subdirectory')
             return True
     return False
-    
+
 def loadTextFromFile(filePath):
     '''
     Load the text text from the specified file
@@ -94,7 +95,7 @@ def loadTextFromFile(filePath):
             text = Core.storage.load(filePath, False)
         except Exception as e:
             logDebug('loadTextFromFile', 'error occurred reading contents of file %s : %s', filePath, e)
-            
+
         # try to decode the contents
         try:
             # decode using the system default
@@ -105,7 +106,7 @@ def loadTextFromFile(filePath):
             # decode using utf-8 and ignore errors
             logDebug('loadTextFromFile', 'decoding string using utf-8 - ignoring errors')
             textUnicode = unicode(text, 'utf-8', errors='ignore')
-    
+
     return textUnicode
 
 def findSeasonSummary(filePaths, fileNames):
@@ -117,7 +118,7 @@ def findSeasonSummary(filePaths, fileNames):
         seasonSummary = loadTextFromFile(filePath)
     else:
         log('findSeasonSummary', 'season summary file not found')
-        
+
     return seasonSummary
 
 def findShowSummary(filePaths, fileNames):
@@ -129,14 +130,14 @@ def findShowSummary(filePaths, fileNames):
         showSummary = loadTextFromFile(filePath)
     else:
         log('findShowSummary', 'show summary file not found')
-        
+
     return showSummary
 
 class BaseMediaParser(object):
     '''
         Parses the file name and determines the type of tile that was found
     '''
-    
+
     fileNameRegex = r'^(?P<fileWithoutExt>.*)\..+$'
 
     # Episode name REGEX
@@ -150,7 +151,7 @@ class BaseMediaParser(object):
         self.seasonSummary = None
         self.episodeTitle = None
         self.episodeSummary = None
-                    
+
     def stripPart(self, episodeTitle):
         processed = episodeTitle
         # Test whether it contains part
@@ -161,9 +162,9 @@ class BaseMediaParser(object):
                 processed = match.group('episodeTitle').strip()
                 logDebug('stripPart', 'stripped episode title: %s', processed)
                 break
-                
+
         return processed
-    
+
     def scrub(self, string):
         processed = ''
         matches = re.split(r'[\.\-_]+', string)
@@ -176,14 +177,14 @@ class BaseMediaParser(object):
                 idx = idx + 1
         else:
             processed = string
-            
+
         logDebug('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
         return processed
-    
+
     def setValues(self, mediaFile, match):
         # set the episode title
         self.episodeTitle = self.scrub(self.stripPart(match.group('episodeTitle').strip()))
-        
+
         # set the episode summary
         self.episodeSummary = None
         # Get the summary file path
@@ -203,7 +204,7 @@ class BaseMediaParser(object):
 
     def getSupportedRegexes(self):
         return []
-    
+
     def containsMatch(self, mediaFile):
         retVal = False
         # Iterate over the list of regular expressions
@@ -213,9 +214,9 @@ class BaseMediaParser(object):
             if match:
                 retVal = True
                 break
-            
+
         return retVal
-        
+
 
     def parse(self, mediaFile):
         # Iterate over the list of regular expressions
@@ -227,7 +228,7 @@ class BaseMediaParser(object):
                 logDebug('parse', 'found matches')
                 self.setValues(mediaFile, match)
                 break
-  
+
     def getEpisodeTitle(self):
         return self.episodeTitle
 
@@ -245,25 +246,25 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
                 # \Show.Title.09.19.2012_23.Episode.Title.mp4
                 r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\2012 - Season Title\Show Title - 2012-09-19 - Episode Title.mp4
-                #Show Title\2012 - Season Title\2012-09-19 - Episode Title.mp4    
+                #Show Title\2012 - Season Title\2012-09-19 - Episode Title.mp4
                 #Show Title\2012\Show Title - 2012-09-19 - Episode Title.mp4
                 #Show Title\2012\2012-09-19 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' ,
                 #2012 - Season Title\Show Title\Show Title - 2012-09-19 - Episode Title.mp4
-                #2012 - Season Title\Show Title\2012-09-19 - Episode Title.mp4    
+                #2012 - Season Title\Show Title\2012-09-19 - Episode Title.mp4
                 #2012\Show Title\Show Title - 2012-09-19 - Episode Title.mp4
                 #2012\Show Title\2012-09-19 - Episode Title.mp4
-                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' ,
                 #Show Title\2012 - Season Title\Show Title - 09-19-2013 - Episode Title.mp4
                 #Show Title\2012 - Season Title\09-19-2013 - Episode Title.mp4
                 #Show Title\2012\Show Title - 09-19-2013 - Episode Title.mp4
                 #Show Title\2012\09-19-2013 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' ,
                 #2012 - Season Title\Show Title\Show Title - 09-19-2013 - Episode Title.mp4
                 #2012 - Season Title\Show Title\09-19-2013 - Episode Title.mp4
                 #2012\Show Title\Show Title - 09-19-2013 - Episode Title.mp4
                 #2012\Show Title\09-19-2013 - Episode Title.mp4
-                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' ,
                 #Show Title\2012\Show Title - 09-19 - Episode Title.mp4
                 #Show Title\2012\09-19 - Episode Title.mp4
                 r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
@@ -271,9 +272,9 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
                 #2012\Show Title\09-19 - Episode Title.mp4
                 r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
-    
+
 class SeriesEpisodeMediaParser(BaseMediaParser):
-    
+
     def getSupportedRegexes(self):
         return [
                 #\Show Title - s2012e09 - Episode Title.mp4
@@ -284,26 +285,26 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
                 #01 - Season Title\Show Title\Show Title - s2012e09 - Episode Title.mp4
                 #01\Show Title\Show Title - s2012e09 - Episode Title.mp4
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
-                #Show Title\01 - Season Title\09 - Episode Title.mp4 
+                #Show Title\01 - Season Title\09 - Episode Title.mp4
                 #Show Title\01\09 - Episode Title.mp4
                 r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
-                #01 - Season Title\Show Title\09 - Episode Title.mp4 
+                #01 - Season Title\Show Title\09 - Episode Title.mp4
                 #01\Show Title\09 - Episode Title.mp4
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4
-                #Show Title\2012\e09 - Episode Title.mp4 
+                #Show Title\2012\e09 - Episode Title.mp4
                 r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #2012\Show Title\Show Title - s2012e09 - Episode Title.mp4
-                #2012\Show Title\e09 - Episode Title.mp4 
+                #2012\Show Title\e09 - Episode Title.mp4
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
-                #Show Title\2012\09 - Episode Title.mp4 
+                #Show Title\2012\09 - Episode Title.mp4
                 r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
-                #2012\Show Title\09 - Episode Title.mp4 
-                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' 
-                ] 
+                #2012\Show Title\09 - Episode Title.mp4
+                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
+                ]
 
 class SeriesDatedEpisodeMediaParser(BaseMediaParser):
-    
+
     def getSupportedRegexes(self):
         return [
             #\Show Title - s2012e09 - 2015-12-31 - Episode Title.mp4
@@ -323,7 +324,7 @@ class SeriesDatedEpisodeMediaParser(BaseMediaParser):
             #Show Title\e09 - 12-31-2015 - Episode Title.mp4
             r'(?P<showTitle>[^\\/]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
         ]
-                 
+
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
@@ -343,7 +344,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         logDebug('search', 'media name: %s', str(media.name))
         logDebug('search', 'media season: %s', str(media.season))
         logDebug('search', 'media episode: %s', str(media.episode))
-        
+
         # Compute the GUID based on the media hash.
         try:
             part = media.items[0].parts[0]
@@ -352,7 +353,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             log('search', 'part file name: %s', filename)
         except:
             log('search', 'part does not exist')
-        
+
         results.Append(MetadataSearchResult(id=media.id, name=media.show, year=None, lang=lang, score=100))
 
     def update(self, metadata, media, lang):
@@ -374,37 +375,37 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             logDebug('update', 'season metadata %s', seasonMetadata)
             metadata.seasons[s].index = int(s)
             seasonFilePaths = []
-            
+
             for e in media.seasons[s].episodes:
                 logDebug('update', 'episode: %s', e)
                 # Make sure metadata exists, and find sidecar media.
                 episodeMetadata = metadata.seasons[s].episodes[e]
                 logDebug('update', 'episode metadata: %s', episodeMetadata)
                 episodeMedia = media.seasons[s].episodes[e].items[0]
-            
+
                 file = episodeMedia.parts[0].file
                 logDebug('update', 'episode file path: %s', file)
                 absFilePath = os.path.abspath(unicodize(file))
                 log('update', 'absolute file path: %s', absFilePath)
-                      
+
                 # Iterate over the list of parsers and parse the file path
                 for parser in series_parsers:
                     if parser.containsMatch(absFilePath) is True:
                         logDebug('update', 'parser object id: %s', id(parser))
                         log('update', 'parser %s contains match - parsing file path', parser)
                         parser.parse(absFilePath)
-                        
+
                         # set the episode data
-                        episodeMetadata.title = parser.getEpisodeTitle()  
+                        episodeMetadata.title = parser.getEpisodeTitle()
                         episodeMetadata.summary = parser.getEpisodeSummary()
                         log('update', 'episode.title: %s', episodeMetadata.title)
                         log('update', 'episode.summary: %s', episodeMetadata.summary)
-                        
+
                         # add the file path to the season file path list
                         seasonFilePaths = self.addFilePath(seasonFilePaths, absFilePath)
                         # add the file path to the show file path list
                         showFilePaths = self.addFilePath(showFilePaths, absFilePath)
-                        
+
                         break
 
             # Check for season summary
@@ -427,7 +428,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         Adds the specified file path to the list if it is a sub-directory or a unique file path
         '''
         evalPaths = []
-    
+
         newDirPath = newFilePath
         if os.path.isfile(newDirPath):
             newDirPath = os.path.dirname(newDirPath)
@@ -450,10 +451,10 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             else:
                 logDebug('addFilePath', 'keeping existing path [%s]', newDirPath)
                 evalPaths.append(path)
-                
+
         # path is a new path - keep it
         if appendPath:
             logDebug('addFilePath', 'keeping new path [%s]', newDirPath)
             evalPaths.append(newDirPath)
-            
+
         return evalPaths

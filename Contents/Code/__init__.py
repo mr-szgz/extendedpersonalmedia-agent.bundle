@@ -56,7 +56,7 @@ def findFile(filePaths, fileNames):
 
             # go up a directory
             logDebug('findFile', 'going up a directory')
-            newDir = os.path.abspath(os.path.join(os.path.dirname( parentDir ), os.pardir))
+            newDir = os.path.abspath(os.path.dirname( parentDir ))
 
             logDebug('findFile', 'new directory path %s', newDir)
             # if the new directory and parent directory are the same then we have reached the top directory - stop looking for the file

@@ -4,5 +4,11 @@
         "label": "Enable debug logging",
         "type": "bool",
         "default": "false"
+    },
+    {
+        "id": "use.last.modified.timestamp.enabled",
+        "label": "Use last modified timestamp for episodes",
+        "type": "bool",
+        "default": "true"
     }
 ]

@@ -151,6 +151,7 @@ class BaseMediaParser(object):
         self.seasonSummary = None
         self.episodeTitle = None
         self.episodeSummary = None
+        self.episodeReleaseDate = None
 
     def stripPart(self, episodeTitle):
         processed = episodeTitle
@@ -181,15 +182,34 @@ class BaseMediaParser(object):
         logDebug('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
         return processed
 
-    def setValues(self, mediaFile, match):
+    def setValues(self, match):
         # set the episode title
         self.episodeTitle = self.scrub(self.stripPart(match.group('episodeTitle').strip()))
+        
+        # set the episode release date
+        # if episodeMonth and episodeDay is present in the regex then the episode release date is in the file name and will be used
+        if 'episodeMonth' in match.groupdict() and 'episodeDay' in match.groupdict():
+            logDebug('setValues', 'episodeMonth found in the regular expression - extracting release date from the file name')
+            self.seasonNumber = None
+            if 'seasonNumber' in match.groupdict():
+                self.seasonNumber = int(match.group('seasonNumber').strip())
+            self.episodeYear = None
+            if 'episodeYear' in match.groupdict():
+                self.episodeYear = int(match.group('episodeYear').strip())
+            # if the regex did not contain a year use the season number
+            if self.episodeYear is None and self.seasonNumber is not None and self.seasonNumber >= 1000:
+                self.episodeYear = self.seasonNumber
+            self.episodeMonth = int(match.group('episodeMonth').strip())
+            self.episodeDay = int(match.group('episodeDay').strip())
+            # Create the date
+            logDebug('setValues', 'year %s month %s day %s', self.episodeYear, self.episodeMonth, self.episodeDay)
+            self.episodeReleaseDate = datetime.datetime(self.episodeYear, self.episodeMonth, self.episodeDay)
+            logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
 
         # set the episode summary
-        self.episodeSummary = None
-        # Get the summary file path
-        # Find out what file format is being used
-        match = re.search(self.fileNameRegex, mediaFile)
+        # get the summary file path
+        # find out what file format is being used
+        match = re.search(self.fileNameRegex, self.mediaFile)
         if match:
             fileWithoutExt = match.group('fileWithoutExt').strip()
             logDebug('setValues', 'file name without extension %s', fileWithoutExt)
@@ -197,11 +217,11 @@ class BaseMediaParser(object):
             logDebug('setValues', 'looking for summary file %s', summaryFilePath)
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
-                log('setValues', 'episode summary file %s exists', summaryFilePath)
+                logDebug('setValues', 'episode summary file %s exists', summaryFilePath)
                 self.episodeSummary = loadTextFromFile(summaryFilePath)
             else:
-                log('setValues', 'episode summary file does not exist')
-
+                logDebug('setValues', 'episode summary file does not exist')
+            
     def getSupportedRegexes(self):
         return []
 
@@ -219,6 +239,8 @@ class BaseMediaParser(object):
 
 
     def parse(self, mediaFile):
+        self.mediaFile = mediaFile
+
         # Iterate over the list of regular expressions
         for regex in self.getSupportedRegexes():
             # Find out what file format is being used
@@ -226,7 +248,7 @@ class BaseMediaParser(object):
             logDebug('parse', 'regex %s - matches: %s', regex, match)
             if match:
                 logDebug('parse', 'found matches')
-                self.setValues(mediaFile, match)
+                self.setValues(match)
                 break
 
     def getEpisodeTitle(self):
@@ -234,6 +256,10 @@ class BaseMediaParser(object):
 
     def getEpisodeSummary(self):
         return self.episodeSummary
+
+    def getEpisodeReleaseDate(self):
+        return self.episodeReleaseDate
+        
 
 class SeriesDateBasedMediaParser(BaseMediaParser):
 
@@ -272,7 +298,7 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
                 #2012\Show Title\09-19 - Episode Title.mp4
                 r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
-
+                 
 class SeriesEpisodeMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
@@ -303,6 +329,18 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
 
+    def setValues(self, match):
+        # set the common values
+        BaseMediaParser.setValues(self, match)
+        
+        # else check to see if the "use last modified timestamp" preference is enabled
+        if bool(Prefs['use.last.modified.timestamp.enabled']):
+            logDebug('setValues', "Use last modified timestamp option is enabled - extracting release date from the file's last modified timestamp")
+            # Get the release date from the file
+            lastModifiedTimestamp = os.path.getmtime(self.mediaFile)
+            self.episodeReleaseDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
+            logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
+        
 class SeriesDatedEpisodeMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
@@ -328,7 +366,7 @@ class SeriesDatedEpisodeMediaParser(BaseMediaParser):
             #Show Title - e09 - 12-31-2015 - Episode Title.mp4
             r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
         ]
-
+        
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
@@ -402,8 +440,10 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         # set the episode data
                         episodeMetadata.title = parser.getEpisodeTitle()
                         episodeMetadata.summary = parser.getEpisodeSummary()
+                        episodeMetadata.originally_available_at = parser.getEpisodeReleaseDate()
                         log('update', 'episode.title: %s', episodeMetadata.title)
                         log('update', 'episode.summary: %s', episodeMetadata.summary)
+                        log('update', 'episode.originally_available_at: %s', episodeMetadata.originally_available_at)
 
                         # add the file path to the season file path list
                         seasonFilePaths = self.addFilePath(seasonFilePaths, absFilePath)

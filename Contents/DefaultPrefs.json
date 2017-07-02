@@ -10,5 +10,11 @@
         "label": "Use last modified timestamp for episodes",
         "type": "bool",
         "default": "true"
+    },
+    {
+        "id": "episode.title.scrub.enabled",
+        "label": "Enable episode title scrubbing",
+        "type": "bool",
+        "default": "true"
     }
 ]

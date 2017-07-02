@@ -166,9 +166,9 @@ class BaseMediaParser(object):
 
         return processed
 
-    def scrub(self, string):
+    def scrub(self, string, charsToRemove):
         processed = ''
-        matches = re.split(r'[\.\-_]+', string)
+        matches = re.split(r'['+charsToRemove+']+', string)
         idx = 1
         if matches is not None:
             for match in matches:
@@ -184,7 +184,12 @@ class BaseMediaParser(object):
 
     def setValues(self, match):
         # set the episode title
-        self.episodeTitle = self.scrub(self.stripPart(match.group('episodeTitle').strip()))
+        self.episodeTitle = self.stripPart(match.group('episodeTitle').strip())
+        # check to see if title should be scrubbed
+        if bool(Prefs['episode.title.scrub.enabled']):
+            episodeScrubChars = '\.\-_'
+            logDebug('setValues', 'scrubbing enabled - replacing characters [%s] from string', episodeScrubChars)
+            self.episodeTitle = self.scrub(self.episodeTitle, episodeScrubChars)
         
         # set the episode release date
         # if episodeMonth and episodeDay is present in the regex then the episode release date is in the file name and will be used

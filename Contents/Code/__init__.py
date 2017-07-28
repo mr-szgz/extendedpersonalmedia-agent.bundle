@@ -133,6 +133,18 @@ def findShowSummary(filePaths, fileNames):
 
     return showSummary
 
+def findShowMetadata(filePaths, fileNames):
+    filePath = None
+    logDebug('findShowMetadata', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
+    filePath = findFile(filePaths, fileNames)
+    if filePath != None:
+        log('findShowMetadata', 'found show metadata file %s', filePath)
+    else:
+        log('findShowMetadata', 'show metadata file not found')
+
+    return filePath
+
+
 class BaseMediaParser(object):
     '''
         Parses the file name and determines the type of tile that was found
@@ -313,7 +325,8 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\01 - Season Title\09 - Episode Title.mp4
                 #Show Title\01\09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Training Title\Lesson1\05 - Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #01 - Season Title\Show Title\09 - Episode Title.mp4
                 #01\Show Title\09 - Episode Title.mp4
                 r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
@@ -341,6 +354,7 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
             self.episodeReleaseDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
             logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
         
+
 class SeriesDatedEpisodeMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
@@ -370,6 +384,26 @@ class SeriesDatedEpisodeMediaParser(BaseMediaParser):
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
+
+class CustomParserMetadata(object):
+    '''
+        Gets the metadata from the specified file
+    '''
+                        
+    def __init__(self, filePath):
+        self.filePath = filePath
+        self.metadata = ConfigParser.SafeConfigParser()
+        self.metadata.read(filePath)
+                                                                
+    def release(self):
+        return self.metadata.get('metadata', 'release')
+
+    def studio(self):
+        return self.metadata.get('metadata', 'studio')
+
+    def genres(self):
+        return self.metadata.get('metadata', 'genres')
+
 
 class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
     name = SERIES_AGENT_NAME
@@ -465,6 +499,24 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         if showSummary != None:
             metadata.summary = showSummary
             log('update', 'show.summary: %s', metadata.summary)
+
+        if bool(Prefs['use.metadata.enabled']):
+            logDebug('update', "Use metadata file option is enabled - extracting metadata from show.metadata")
+            showMetadataFilePath = findShowMetadata(showFilePaths, [showTitle + '.metadata', 'show.metadata'])
+            if showMetadataFilePath != None:
+                fileMetadata = CustomParserMetadata(showMetadataFilePath)
+                release = fileMetadata.release()
+                if release is not None:
+                    metadata.originally_available_at = datetime.datetime.strptime(release, '%Y-%m-%d')
+                    log('update', 'show.metadata - release: %s', release)
+                studio = fileMetadata.studio()
+                if studio is not None:
+                    metadata.studio = studio
+                    log('update', 'show.metadata - studio: %s', studio)
+                genres = fileMetadata.genres() 
+                if genres is not None:
+                    metadata.genres = genres.split(",")
+                    log('update', 'show.metadata - genres: %s', genres)
 
 
     def addFilePath(self, filePaths, newFilePath):

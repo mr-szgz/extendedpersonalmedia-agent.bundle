@@ -10,5 +10,11 @@
         "label": "Use last modified timestamp for episodes",
         "type": "bool",
         "default": "true"
+    },
+    {
+	"id": "use.metadata.enabled",
+	"label": "Use metadata file for shows (Use last modified timestamp.. should be disabled)",
+	"type": "bool",
+	"default": "false"
     }
 ]

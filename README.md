@@ -237,13 +237,10 @@ genres=Linux
 3. Follow the instructions for Mac, Windows, or Linux below.
 
 4. Restart Plex Media Server (this is optional)
-
 **On Mac and Windows**: just quit and start again
-
 **On Linux (Ubuntu)**: sudo service plexmediaserver restart
 
 5. In the Plex/Web application go to **Settings > Server > Agents > Shows > Extended Personal Media Shows**. 
-
 *Ensure that the **Local Media Assets (TV) agent** is checked and showing in the list (see the screen capture). The Local Media Assets is needed to add subtitle or metadata attributes from the files to your media.*
 
 ![](https://us.v-cdn.net/6025034/uploads/editor/mg/csrcy7ydc2r3.png)

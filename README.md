@@ -1,6 +1,6 @@
 # Extended Personal Media Shows Agent
 
-This metadata agent should be used with the Extended Personal Media Scanner. See the instructions on this page for installing the scanner.
+This metadata agent should be used with the Extended Personal Media Scanner. See the instructions on this [page](https://bitbucket.org/mjarends/extendedpersonalmedia-agent.bundle/src) for installing the scanner.
 
 This is a Metadata Agent for personal media files. It works in conjunction with the Extended Personal Media Scanner to scan personal media shows. The meta data agent sets the summary details on the episode. The agent expects the files to follow the naming conventions for personal media that are outlined in the [Plex documentation](https://support.plex.tv/hc/en-us/sections/200068083-Naming-and-Organizing-Personal-Media).
 
@@ -140,6 +140,8 @@ The above example would result in shows with **Christmas** and **Italy** as the 
 
 ### Using Chapter or Lesson instead of Season:
 
+## Chapter
+
 Additionally the plugin supports using "Chapter" and "C" instead of "Season" and "S" (case is ignored). 
 **Note: the word "Season" would still be used in the Plex user interface and cannot be changed by the metadata agent plugin.**
 
@@ -159,21 +161,27 @@ Additionally the plugin supports using "Chapter" and "C" instead of "Season" and
 
 The above example would result in 7 episodes being added under three seasons with a show name of "Physics 101".
 
+## Lesson
+
+The plugin also supports using "Lesson" instead of "Chapter" or "Season".
+
 ```
 /Video Training
    /Some Video Training
-      /L01
-         01 - Some notes.m4v
-         02 - Some more notes.m4v
-      /Lesson03
-         01 - Something else.m4v
-         02 - Something more.m4v
-         03 - Something real.m4v
+      /Lesson01
+         01 - video1.m4v
+         02 - video2.m4v
+      /Lesson02
+         01 - video1.m4v
+         02 - video2.m4v
+         03 - video3.m4v
 ```
 
 ## Show summaries
 
-Show summaries can be added to media files in Plex by creating a file with the show name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. It is important to note that the show summary file found will be used as the summary information for the show.
+Show summaries can be added to media files in Plex by creating a file with the show name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
+
+*It is important to note that the show summary file found will be used as the summary information for the show.*
 
 There are two formats supported for show summary files:
 
@@ -202,10 +210,15 @@ Summary file:
 
 ## Show metadata
 
-???
+Show metadata can be added to media files in Plex by creating a file with the name "show.metadata" in the root directory path of your media file that you want to add the metadata to.
 
-
-
+Example metadata file:
+```
+[metadata]
+release=2017-05-01
+studio=Studio XYZ
+genres=Linux
+```
 
 ## Download and source
 

@@ -221,7 +221,7 @@ Example metadata file:
 [metadata]
 release=2017-05-01
 studio=Studio XYZ
-genres=Linux
+genres=Linux, Automation
 ```
 
 ## Download and source

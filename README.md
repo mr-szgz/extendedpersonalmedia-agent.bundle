@@ -63,7 +63,11 @@ The above example would result in shows with **Christmas** and **Grandma** as th
 
 ### Multiple episodes/shows on the same day:
 
-With this plug-in it is possible to have multiple shows on the same date. An example of where this might be used in storing multiple NFL games in a directory with the same date. The Plex Series Scanner will see these as the same episode and will give them the same episode title. The Extended Personal Media scanner and agent allow the user to specific an index number after the date to specify that the episode is different. This results in Plex showing the episode with the appropriate title.
+With this plug-in it is possible to have multiple shows on the same date. 
+
+An example of where this might be used in storing multiple NFL games in a directory with the same date. The Plex Series Scanner will see these as the same episode and will give them the same episode title. 
+
+The Extended Personal Media scanner and agent allow the user to specific an index number after the date to specify that the episode is different. This results in Plex showing the episode with the appropriate title.
 
 ```
 /Sports
@@ -140,7 +144,7 @@ The above example would result in shows with **Christmas** and **Italy** as the 
 
 ### Using Chapter or Lesson instead of Season:
 
-## Chapter
+#### Chapter
 
 Additionally the plugin supports using "Chapter" and "C" instead of "Season" and "S" (case is ignored). 
 **Note: the word "Season" would still be used in the Plex user interface and cannot be changed by the metadata agent plugin.**
@@ -161,7 +165,7 @@ Additionally the plugin supports using "Chapter" and "C" instead of "Season" and
 
 The above example would result in 7 episodes being added under three seasons with a show name of "Physics 101".
 
-## Lesson
+#### Lesson
 
 The plugin also supports using "Lesson" instead of "Chapter" or "Season".
 
@@ -234,15 +238,15 @@ genres=Linux
 
 4. Restart Plex Media Server (this is optional)
 
- **On Mac and Windows**: just quit and start again
+**On Mac and Windows**: just quit and start again
 
- **On Linux (Ubuntu)**: sudo service plexmediaserver restart
+**On Linux (Ubuntu)**: sudo service plexmediaserver restart
 
 5. In the Plex/Web application go to **Settings > Server > Agents > Shows > Extended Personal Media Shows**. 
 
- *Ensure that the **Local Media Assets (TV) agent** is checked and showing in the list (see the screen capture). The Local Media Assets is needed to add subtitle or metadata attributes from the files to your media.*
+*Ensure that the **Local Media Assets (TV) agent** is checked and showing in the list (see the screen capture). The Local Media Assets is needed to add subtitle or metadata attributes from the files to your media.*
 
- ![](https://us.v-cdn.net/6025034/uploads/editor/mg/csrcy7ydc2r3.png)
+![](https://us.v-cdn.net/6025034/uploads/editor/mg/csrcy7ydc2r3.png)
 
 6. In Plex/Web (the media manager), create a new "TV Shows" section and select Extended Personal Media Shows  from the Agent dropdown menu (under Advanced Options).
 

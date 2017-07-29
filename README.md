@@ -14,13 +14,15 @@ This results in it being sorted correctly in all Plex user interfaces. The episo
 
 ### Plex date-based naming standard:
 
-```/Home Movies
+```
+/Home Movies
    /Christmas
       /2010
          Christmas - 2010-01-06 - Getting Ready.m4v
          Christmas - 01-07-2010 - Getting Ready.m4v
          Christmas - 2010-12-24 - Stuffing_the_Stockings.m4v
-         Christmas.12-25-2010.Christmas.Morning.m4v```
+         Christmas.12-25-2010.Christmas.Morning.m4v
+```
 
 ### Additional supported formats:
 

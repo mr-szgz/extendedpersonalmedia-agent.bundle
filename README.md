@@ -243,10 +243,9 @@ genres=Linux
 5. In the Plex/Web application go to **Settings > Server > Agents > Shows > Extended Personal Media Shows**. 
 *Ensure that the **Local Media Assets (TV) agent** is checked and showing in the list (see the screen capture). The Local Media Assets is needed to add subtitle or metadata attributes from the files to your media.*
 
-![](https://us.v-cdn.net/6025034/uploads/editor/mg/csrcy7ydc2r3.png)
-
 6. In Plex/Web (the media manager), create a new "TV Shows" section and select Extended Personal Media Shows  from the Agent dropdown menu (under Advanced Options).
 
+![](https://us.v-cdn.net/6025034/uploads/editor/mg/csrcy7ydc2r3.png)
 
 **Mac** 
 

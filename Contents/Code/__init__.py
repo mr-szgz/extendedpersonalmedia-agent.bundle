@@ -180,7 +180,10 @@ class BaseMediaParser(object):
 
     def scrub(self, string):
         processed = ''
-        matches = re.split(r'[\.\-_]+', string)
+        if bool(Prefs['scrub.only.underscore.from.episode.title']):
+            matches = re.split(r'[_]+', string)
+        else:
+            matches = re.split(r'[\.\-_]+', string)
         idx = 1
         if matches is not None:
             for match in matches:

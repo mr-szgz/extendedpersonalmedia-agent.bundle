@@ -16,5 +16,11 @@
 	"label": "Use metadata file for shows (Use last modified timestamp.. should be disabled)",
 	"type": "bool",
 	"default": "false"
+    },
+    {
+	"id": "scrub.only.underscore.from.episode.title",
+	"label": "Remove only '_' from episode titles",
+	"type": "bool",
+	"default": "false"
     }
 ]

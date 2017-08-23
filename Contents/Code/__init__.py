@@ -1,4 +1,4 @@
-# Version Date: 2017-06-29
+# Version Date: 2017-08-22
 
 import datetime, os, sys, time, re, locale, ConfigParser
 from string import Template
@@ -12,6 +12,18 @@ def logDebug(methodName, message, *args):
 
 def log(methodName, message, *args):
     Log(methodName + ' :: ' + message, *args)
+
+def isBlank (string):
+    '''
+    Tests whether the string is blank
+    '''
+    return not(string and string.strip())
+
+def isNotBlank (string):
+    '''
+    Tests whether the string is not blank
+    '''
+    return bool(string and string.strip())
 
 # Only use unicode if it's supported, which it is on Windows and OS X,
 # but not Linux. This allows things to work with non-ASCII characters
@@ -109,6 +121,28 @@ def loadTextFromFile(filePath):
 
     return textUnicode
 
+def getSummaryFileExtension():
+    '''
+    Gets the summary file extension to use from the plugin preferences
+    '''
+    fileExt = Prefs['summary.file.extension']
+    if isBlank(fileExt):
+        fileExt = 'summary'
+    logDebug('getSummaryFileExtension', 'using summary file extension %s', fileExt)
+    fileExt = '.'+fileExt
+    return fileExt
+
+def getMetadataFileExtension():
+    '''
+    Gets the metadata file extension to use from the plugin preferences
+    '''
+    fileExt = Prefs['metadata.file.extension']
+    if isBlank(fileExt):
+        fileExt = 'metadata'
+    logDebug('getMetadataFileExtension', 'using metadata file extension %s', fileExt)
+    fileExt = '.'+fileExt
+    return fileExt
+    
 def findSeasonSummary(filePaths, fileNames):
     seasonSummary = None
     logDebug('findSeasonSummary', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
@@ -132,6 +166,18 @@ def findShowSummary(filePaths, fileNames):
         log('findShowSummary', 'show summary file not found')
 
     return showSummary
+
+def findShowMetadata(filePaths, fileNames):
+    filePath = None
+    logDebug('findShowMetadata', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
+    filePath = findFile(filePaths, fileNames)
+    if filePath != None:
+        log('findShowMetadata', 'found show metadata file %s', filePath)
+    else:
+        log('findShowMetadata', 'show metadata file not found')
+
+    return filePath
+
 
 class BaseMediaParser(object):
     '''
@@ -165,20 +211,16 @@ class BaseMediaParser(object):
                 break
 
         return processed
-
+       
     def scrub(self, string, charsToRemove):
-        processed = ''
-        matches = re.split(r'['+charsToRemove+']+', string)
-        idx = 1
-        if matches is not None:
-            for match in matches:
-                processed = processed + match
-                if idx < len(matches):
-                    processed = processed + ' '
-                idx = idx + 1
-        else:
-            processed = string
-
+        processed = string
+        stringAsList = list(charsToRemove)
+        i = 0
+        while i + 3 <= len(stringAsList):
+            processed = re.sub(re.escape(stringAsList[i]), stringAsList[i+2], processed)
+            i = i + 4
+        if i < len(stringAsList):
+            logDebug('scrubString', 'did not process the remaining characters [%s] in the string - verify the scrub string is formatted correctly i.e. A=B,C=D', charsToRemove[i:len(charsToRemove)])
         logDebug('scrubString', 'original: [%s] scrubbed: [%s]', string, processed)
         return processed
 
@@ -187,9 +229,12 @@ class BaseMediaParser(object):
         self.episodeTitle = self.stripPart(match.group('episodeTitle').strip())
         # check to see if title should be scrubbed
         if bool(Prefs['episode.title.scrub.enabled']):
-            episodeScrubChars = '\.\-_'
-            logDebug('setValues', 'scrubbing enabled - replacing characters [%s] from string', episodeScrubChars)
-            self.episodeTitle = self.scrub(self.episodeTitle, episodeScrubChars)
+            episodeScrubChars = Prefs['episode.title.scrub.characters']
+            if isNotBlank(episodeScrubChars):
+                logDebug('setValues', 'scrubbing enabled - using scrub characters [%s] ', episodeScrubChars)
+                self.episodeTitle = self.scrub(self.episodeTitle, episodeScrubChars)
+            else:
+                logDebug('setValues', 'scrubbing enabled - scrub characters are blank [%s] - skipping scrubbing', episodeScrubChars)
         
         # set the episode release date
         # if episodeMonth and episodeDay is present in the regex then the episode release date is in the file name and will be used
@@ -218,7 +263,7 @@ class BaseMediaParser(object):
         if match:
             fileWithoutExt = match.group('fileWithoutExt').strip()
             logDebug('setValues', 'file name without extension %s', fileWithoutExt)
-            summaryFilePath = fileWithoutExt + '.summary'
+            summaryFilePath = fileWithoutExt + getSummaryFileExtension()
             logDebug('setValues', 'looking for summary file %s', summaryFilePath)
             # If the summary file exist read in the contents
             if os.path.exists(summaryFilePath) is True:
@@ -312,26 +357,27 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
                 r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*[sc](?P<seasonNumber>[0-9]+)[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\01 - Season Title\Show Title - s2012e09 - Episode Title.mp4
                 #Show Title\01\Show Title - s2012e09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #01 - Season Title\Show Title\Show Title - s2012e09 - Episode Title.mp4
                 #01\Show Title\Show Title - s2012e09 - Episode Title.mp4
-                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'[sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\01 - Season Title\09 - Episode Title.mp4
                 #Show Title\01\09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Training Title\Lesson1\05 - Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #01 - Season Title\Show Title\09 - Episode Title.mp4
                 #01\Show Title\09 - Episode Title.mp4
-                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'[sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\2012\Show Title - s2012e09 - Episode Title.mp4
                 #Show Title\2012\e09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #2012\Show Title\Show Title - s2012e09 - Episode Title.mp4
                 #2012\Show Title\e09 - Episode Title.mp4
-                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'[sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #Show Title\2012\09 - Episode Title.mp4
-                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
                 #2012\Show Title\09 - Episode Title.mp4
-                r'[sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
+                r'[sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/](?P<showTitle>[^\\/]+)[\\/](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
 
     def setValues(self, match):
@@ -346,6 +392,7 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
             self.episodeReleaseDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
             logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
         
+
 class SeriesDatedEpisodeMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):
@@ -359,9 +406,9 @@ class SeriesDatedEpisodeMediaParser(BaseMediaParser):
             #Show Title\s2012e09 - 12-31-2015 - Episode Title.mp4
             r'(?P<showTitle>[^\\/]+)[\\/][sc](?P<seasonNumber>[0-9]+)[e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
             #Show Title\s2015\e09 - 2015-12-31 - Episode Title.mp4
-            r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+            r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
             #Show Title\s2015\e09 - 12-31-2015 - Episode Title.mp4
-            r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+            r'(?P<showTitle>[^\\/]+)[\\/][sc|season|chapter|lesson]*?[ ]*?(?P<seasonNumber>[0-9]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
             #Show Title\e09 - 2015-12-31 - Episode Title.mp4
             r'(?P<showTitle>[^\\/]+)[\\/][e](?P<episodeNumber>[0-9]+)[ ]*[-\.]{0,1}[ ]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
             #Show Title\e09 - 12-31-2015 - Episode Title.mp4
@@ -375,6 +422,26 @@ class SeriesDatedEpisodeMediaParser(BaseMediaParser):
 def Start():
     log('Start', 'starting agents %s, %s', SERIES_AGENT_NAME)
     pass
+
+class CustomParserMetadata(object):
+    '''
+        Gets the metadata from the specified file
+    '''
+                        
+    def __init__(self, filePath):
+        self.filePath = filePath
+        self.metadata = ConfigParser.SafeConfigParser()
+        self.metadata.read(filePath)
+                                                                
+    def release(self):
+        return self.metadata.get('metadata', 'release')
+
+    def studio(self):
+        return self.metadata.get('metadata', 'studio')
+
+    def genres(self):
+        return self.metadata.get('metadata', 'genres')
+
 
 class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
     name = SERIES_AGENT_NAME
@@ -458,7 +525,17 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         break
 
             # Check for season summary
-            seasonFileNames = [showTitle + '-S' + s + '.summary', showTitle + '-s' + s + '.summary', showTitle + '-C' + s + '.summary', showTitle + '-c' + s + '.summary', 'season-' + s + '.summary', 'chapter-' + s + '.summary', 'S' + s + '.summary', 's' + s + '.summary', 'C' + s + '.summary', 'c' + s + '.summary']
+            summaryFileExt = getSummaryFileExtension()
+            # Build the list of the file names that we should look for
+            seasonFileNames = [showTitle + '-S' + s + summaryFileExt, showTitle + '-s' + s + summaryFileExt, 
+                                showTitle + '-C' + s + summaryFileExt, showTitle + '-c' + s + summaryFileExt, 
+                                showTitle + '-L' + s + summaryFileExt, showTitle + '-l' + s + summaryFileExt, 
+                                'season-' + s + summaryFileExt, 
+                                'chapter-' + s + summaryFileExt, 
+                                'lesson-' + s + summaryFileExt, 
+                                'S' + s + summaryFileExt, 's' + s + summaryFileExt, 
+                                'C' + s + summaryFileExt, 'c' + s + summaryFileExt, 
+                                'L' + s + summaryFileExt, 'l' + s + summaryFileExt]
             seasonSummary = findSeasonSummary(seasonFilePaths, seasonFileNames)
             if seasonSummary != None:
                 seasonMetadata.summary = seasonSummary
@@ -466,10 +543,30 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
 
 
         # Check for show summary
-        showSummary = findShowSummary(showFilePaths, [showTitle + '.summary', 'show.summary'])
+        summaryFileExt = getSummaryFileExtension()
+        showSummary = findShowSummary(showFilePaths, [showTitle + summaryFileExt, 'show' + summaryFileExt])
         if showSummary != None:
             metadata.summary = showSummary
             log('update', 'show.summary: %s', metadata.summary)
+
+        if bool(Prefs['use.show.metadata.enabled']):
+            logDebug('update', 'use metadata file option is enabled - extracting metadata from metadata file')
+            metadataFileExt = getMetadataFileExtension()
+            showMetadataFilePath = findShowMetadata(showFilePaths, [showTitle + metadataFileExt, 'show' + metadataFileExt])
+            if showMetadataFilePath != None:
+                fileMetadata = CustomParserMetadata(showMetadataFilePath)
+                release = fileMetadata.release()
+                if release is not None:
+                    metadata.originally_available_at = datetime.datetime.strptime(release, '%Y-%m-%d')
+                    log('update', 'show.metadata - release: %s', release)
+                studio = fileMetadata.studio()
+                if studio is not None:
+                    metadata.studio = studio
+                    log('update', 'show.metadata - studio: %s', studio)
+                genres = fileMetadata.genres() 
+                if genres is not None:
+                    metadata.genres = genres.split(",")
+                    log('update', 'show.metadata - genres: %s', genres)
 
 
     def addFilePath(self, filePaths, newFilePath):

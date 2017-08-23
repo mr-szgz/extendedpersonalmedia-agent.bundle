@@ -1,20 +1,44 @@
 [
     {
         "id": "logger.debug.enabled",
-        "label": "Enable debug logging",
+        "label": "Enable debug logging?",
         "type": "bool",
         "default": "false"
     },
     {
         "id": "use.last.modified.timestamp.enabled",
-        "label": "Use last modified timestamp for episodes",
+        "label": "Use last modified timestamp for episodes?",
         "type": "bool",
         "default": "true"
     },
     {
         "id": "episode.title.scrub.enabled",
-        "label": "Enable episode title scrubbing",
+        "label": "Enable episode title scrubbing?",
         "type": "bool",
         "default": "true"
+    },
+    {
+        "id": "episode.title.scrub.characters",
+        "label": "Comma separated list of values to scrub from the episode title (default value: .= ,-= ,_= ). The format of the setting is A=B,C=D where A will be replaced by B and C will be replaced by D. This setting is only applicable when Enable episode title scrubbing? is enabled.",
+        "type": "text",
+        "default": ".= ,-= ,_= "
+    },
+    {
+        "id": "summary.file.extension",
+        "label": "File extension to use for summary files (default value: summary). Do not include the period ('.') in the value.",
+        "type": "text",
+        "default": "summary"
+    },
+    {
+		"id": "use.show.metadata.enabled",
+		"label": "Use metadata file for shows?",
+		"type": "bool",
+		"default": "false"
+    },
+    {
+        "id": "metadata.file.extension",
+        "label": "File extension to use for metadata files (default value: metadata). Do not include the period ('.') in the value.",
+        "type": "text",
+        "default": "metadata"
     }
 ]

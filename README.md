@@ -18,7 +18,7 @@ This results in it being sorted correctly in all Plex user interfaces. The episo
 
 ### Plex date-based naming standard:
 
-'''
+```
 /Home Movies
    /Christmas
       /2010
@@ -26,7 +26,7 @@ This results in it being sorted correctly in all Plex user interfaces. The episo
          Christmas - 01-07-2010 - Getting Ready.m4v
          Christmas - 2010-12-24 - Stuffing_the_Stockings.m4v
          Christmas.12-25-2010.Christmas.Morning.m4v
-'''
+```
 
 ### Additional supported formats:
 
@@ -34,18 +34,18 @@ If the season title is specified it should go in the season description.
 
 **Right now this is not working. I'm looking into why this failing.**
 
-'''
+```
 /Home Movies
    /Christmas
       /2010
          2010-01-06 - Getting Ready.m4v
          12-24 - Stuffing the Stockings.m4v
-'''
-'''
+```
+```
       /2011 - Season title
          2011-01-06 - Some.title.m4v
          12-24 - Some_other_title.m4v
-'''
+```
 
 The above example would result in a show with **Christmas** as the show title. The season number, episode number and episode title would be parsed from the names.
 
@@ -53,7 +53,7 @@ The above example would result in a show with **Christmas** as the show title. T
 
 Additionally the scanner and metadata agent also support unstructured content as well. What this means is that you could put all of your files in the same folder as long as the file name format looks like the following:
 
-'''
+```
 /Home Movies
    /Holidays
       /Christmas - 2011-12-25 - Getting Ready.m4v
@@ -61,7 +61,7 @@ Additionally the scanner and metadata agent also support unstructured content as
    /Birthdays
       /Grandma - 2010-02-24 - Grandma's 77th birthday party.m4v
       /Grandma - 2008-02-24 - Grandma's 75th birthday party.m4v
-'''
+```
 
 The above example would result in shows with **Christmas** and **Grandma** as the show titles. The season number, episode number and episode title would be parse from the names.
 
@@ -73,14 +73,14 @@ An example of where this might be used in storing multiple NFL games in a direct
 
 The Extended Personal Media scanner and agent allow the user to specific an index number after the date to specify that the episode is different. This results in Plex showing the episode with the appropriate title.
 
-'''
+```
 /Sports
    /NFL
       /2013
          01-06_1 - Patriots Vs Giants.m4v
          01-06_2 - Houston Vs Minnesota.m4v
          2013-01-06_3 - Oakland Vs St. Lious.m4v
-'''
+```
 
 In the example of above three separate episode would be created in Plex and each with their own name.
 
@@ -88,14 +88,14 @@ In the example of above three separate episode would be created in Plex and each
 ## Episode-number based shows
 
 ### Plex episode-based naming standard:
-'''
+```
 /Home Movies
    /Christmas
       /2010
          Christmas - s2010e0106 - Getting Ready.m4v
          Christmas - s2010e0225 - Stuffing the Stockings.m4v
          Christmas - s2010e1225 - Christmas Morning.m4v
-'''
+```
 
 ### Additional supported formats:
 
@@ -103,7 +103,7 @@ If the season title is specified it should go in the season description.
 
 ** Right now this is not working. I'm looking into why this failing.**
 
-'''
+```
 /Home Movies
    /Christmas
       /2010
@@ -111,14 +111,14 @@ If the season title is specified it should go in the season description.
          e02 - Another episode.m4v
       /2011 - Season title
          s2010e01 - Getting Ready.m4v
-'''
+```
 
 The above example would result in a show with **Christmas** as the show title. The season number, episode number and episode title would be parsed from the names.
 
 ### Episodes that contain episode release dates:
 
 The following shows the different supported directory/file formats that are supported by the plug-in.
-'''
+```
 /Home Movies
     /NFL - s2015e01 - 2015-12-31 - Minnesota vs Green Bay.mp4
     /NFL - s2015e02 - 12-31-2015 - Detroit vs Tampa Bay.mp4
@@ -130,19 +130,19 @@ The following shows the different supported directory/file formats that are supp
           /e06 - 12-31-2015 - New York Giants vs Philadelphia.mp4
        /e07 - 2015-12-31 - Cincinnati vs Pittsburgh.mp4
        /e08 - 12-31-2015 - Episode Title.mp4
-'''
+```
 
 The above example would result in a show with **NFL** as the show title. The season number, episode number, episode release date and episode title would be parsed from the names. The example shows 8 episodes specified above each would show up having the release date of 12-31-2015 in Plex.
 
 ### Unstructured format:
 
-'''
+```
 /Home Movies
    /Holidays
       /Christmas - s2010e01 - Getting Ready.m4v
    /Vacations
       /Italy - s2010e01 - Getting Ready.m4v
-'''
+```
 
 The above example would result in shows with **Christmas** and **Italy** as the show titles. The season number, episode number and episode title would be parsed from the names.
 
@@ -153,7 +153,7 @@ The above example would result in shows with **Christmas** and **Italy** as the 
 Additionally the plugin supports using "Chapter" and "C" instead of "Season" and "S" (case is ignored). 
 **Note: the word "Season" would still be used in the Plex user interface and cannot be changed by the metadata agent plugin.**
 
-'''
+```
 /College Classes
    /Physics 101
       Physics 101 - c1e1 - First chapter.m4v
@@ -165,7 +165,7 @@ Additionally the plugin supports using "Chapter" and "C" instead of "Season" and
          e1 - Something else.m4v
          e2 - Something more.m4v
          e3 - Something real.m4v
-'''
+```
 
 The above example would result in 7 episodes being added under three seasons with a show name of "Physics 101".
 
@@ -173,7 +173,7 @@ The above example would result in 7 episodes being added under three seasons wit
 
 The plugin also supports using "Lesson" instead of "Chapter" or "Season".
 
-'''
+```
 /Video Training
    /Some Video Training
       /Lesson01
@@ -183,7 +183,7 @@ The plugin also supports using "Lesson" instead of "Chapter" or "Season".
          01 - video1.m4v
          02 - video2.m4v
          03 - video3.m4v
-'''
+```
 
 ## Show summaries
 
@@ -198,11 +198,11 @@ There are two formats supported for show summary files:
 
 Example media file:
 
-'''/Media Root/Show title/Show title - 2010-02-02 - Some title.mp4'''
+```/Media Root/Show title/Show title - 2010-02-02 - Some title.mp4```
 
 Summary file:
 
-'''/Media Root/Show title/Show title.summary'''
+```/Media Root/Show title/Show title.summary```
 
 ## Episode summaries
 
@@ -210,23 +210,23 @@ Episode summaries can be added to media files in Plex by creating a file with th
 
 Example media file:
 
-'''Show title - 2010-02-02 - Some title.mp4'''
+```Show title - 2010-02-02 - Some title.mp4```
 
 Summary file:
 
-'''Show title - 2010-02-02 - Some title.summary'''
+```Show title - 2010-02-02 - Some title.summary```
 
 ## Show metadata
 
 Show metadata can be added to media files in Plex by creating a file with the name "show.metadata" in the root directory path of your media file that you want to add the metadata to.
 
 Example metadata file:
-'''
+```
 [metadata]
 release=2017-05-01
 studio=Studio XYZ
 genres=Linux, Automation
-'''
+```
 
 ## Download and source
 

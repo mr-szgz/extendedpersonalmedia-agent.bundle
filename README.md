@@ -6,7 +6,7 @@ This is a Metadata Agent for personal media files. It works in conjunction with 
 
 ##Change Log
 
-[Change Log](https://forums.plex.tv/index.php/topic/83440-rel-extended-personal-media-shows-agent/)
+[Change Log](https://forums.plex.tv/discussion/83440/rel-extended-personal-media-shows-agent/p1)
 
 ## Date-numbered shows
 

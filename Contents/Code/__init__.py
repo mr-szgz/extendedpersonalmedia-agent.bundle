@@ -193,8 +193,7 @@ class BaseMediaParser(object):
                     ]
 
     def __init__(self):
-        self.showSummary = None
-        self.seasonSummary = None
+        self.seasonTitle = None
         self.episodeTitle = None
         self.episodeSummary = None
         self.episodeReleaseDate = None
@@ -225,6 +224,11 @@ class BaseMediaParser(object):
         return processed
 
     def setValues(self, match):
+        # set the season title
+        if 'seasonTitle' in match.groupdict() and match.group('seasonTitle') is not None:
+            self.seasonTitle = self.stripPart(match.group('seasonTitle').strip())
+            logDebug('setValues', 'season title: %s', str(self.seasonTitle))
+    
         # set the episode title
         self.episodeTitle = self.stripPart(match.group('episodeTitle').strip())
         # check to see if title should be scrubbed
@@ -300,6 +304,9 @@ class BaseMediaParser(object):
                 logDebug('parse', 'found matches')
                 self.setValues(match)
                 break
+
+    def getSeasonTitle(self):
+        return self.seasonTitle
 
     def getEpisodeTitle(self):
         return self.episodeTitle
@@ -384,12 +391,18 @@ class SeriesEpisodeMediaParser(BaseMediaParser):
         # set the common values
         BaseMediaParser.setValues(self, match)
         
-        # else check to see if the "use last modified timestamp" preference is enabled
-        if bool(Prefs['use.last.modified.timestamp.enabled']):
+        # check to see if the "use last modified timestamp" preference is enabled
+        if bool(Prefs['episode.use.last.modified.timestamp.enabled']):
             logDebug('setValues', "Use last modified timestamp option is enabled - extracting release date from the file's last modified timestamp")
             # Get the release date from the file
-            lastModifiedTimestamp = os.path.getmtime(self.mediaFile)
-            self.episodeReleaseDate = datetime.date.fromtimestamp(lastModifiedTimestamp)
+            self.episodeReleaseDate = datetime.date.fromtimestamp(os.path.getmtime(self.mediaFile))
+            logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
+
+        # check to see if the "use last modified timestamp" preference is enabled
+        elif bool(Prefs['episode.use.created.timestamp.enabled']):
+            logDebug('setValues', "Use created timestamp option is enabled - extracting release date from the file's created timestamp")
+            # Get the release date from the file
+            self.episodeReleaseDate = datetime.date.fromtimestamp(os.path.getctime(self.mediaFile))
             logDebug('setValues', 'episode date: %s', str(self.episodeReleaseDate))
         
 
@@ -478,8 +491,6 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         logDebug('update', 'lang: %s', str(lang))
         # set the metadata title
         metadata.title = media.title
-        # list of series parsers
-        series_parsers = [SeriesDatedEpisodeMediaParser(), SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
         showTitle = metadata.title
         # list of file paths
         showFilePaths = []
@@ -490,6 +501,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             metadata.seasons[s].index = int(s)
             seasonFilePaths = []
 
+            seasonTitle = None            
             for e in media.seasons[s].episodes:
                 logDebug('update', 'episode: %s', e)
                 # Make sure metadata exists, and find sidecar media.
@@ -502,6 +514,8 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                 absFilePath = os.path.abspath(unicodize(file))
                 log('update', 'absolute file path: %s', absFilePath)
 
+                # list of series parsers
+                series_parsers = [SeriesDatedEpisodeMediaParser(), SeriesDateBasedMediaParser(), SeriesEpisodeMediaParser()]
                 # Iterate over the list of parsers and parse the file path
                 for parser in series_parsers:
                     if parser.containsMatch(absFilePath) is True:
@@ -522,6 +536,10 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         # add the file path to the show file path list
                         showFilePaths = self.addFilePath(showFilePaths, absFilePath)
 
+                        # get the season title from one of the episodes
+                        if seasonTitle is None and isNotBlank(parser.getSeasonTitle()):
+                            seasonTitle = parser.getSeasonTitle()
+
                         break
 
             # Check for season summary
@@ -537,15 +555,19 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                                 'C' + s + summaryFileExt, 'c' + s + summaryFileExt, 
                                 'L' + s + summaryFileExt, 'l' + s + summaryFileExt]
             seasonSummary = findSeasonSummary(seasonFilePaths, seasonFileNames)
-            if seasonSummary != None:
+            if seasonSummary is not None:
                 seasonMetadata.summary = seasonSummary
                 log('update', 'season.summary: %s', seasonMetadata.summary)
-
-
+            
+            # Set the season title
+            if seasonTitle is not None:
+                seasonMetadata.title = seasonTitle
+                log('update', 'season.title: %s', seasonMetadata.title)
+            
         # Check for show summary
         summaryFileExt = getSummaryFileExtension()
         showSummary = findShowSummary(showFilePaths, [showTitle + summaryFileExt, 'show' + summaryFileExt])
-        if showSummary != None:
+        if showSummary is not None:
             metadata.summary = showSummary
             log('update', 'show.summary: %s', metadata.summary)
 
@@ -553,7 +575,7 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             logDebug('update', 'use metadata file option is enabled - extracting metadata from metadata file')
             metadataFileExt = getMetadataFileExtension()
             showMetadataFilePath = findShowMetadata(showFilePaths, [showTitle + metadataFileExt, 'show' + metadataFileExt])
-            if showMetadataFilePath != None:
+            if showMetadataFilePath is not None:
                 fileMetadata = CustomParserMetadata(showMetadataFilePath)
                 release = fileMetadata.release()
                 if release is not None:

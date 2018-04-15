@@ -638,13 +638,13 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
             seasonDataMap = {'id':seasonId, 'title':'', 'summary':''}
             if seasonSummary is not None:
                 #seasonMetadata.summary = seasonSummary
-                seasonDataMap['title'] = seasonSummary
+                seasonDataMap['summary'] = seasonSummary
                 log('update', 'season.summary: %s', seasonSummary)
             
             # Set the season title
             if seasonTitle is not None:
                 #seasonMetadata.title = seasonTitle
-                seasonDataMap['summary'] = seasonTitle
+                seasonDataMap['title'] = seasonTitle
                 log('update', 'season.title: %s', seasonTitle)
             # Set the season details
             setSeasonMetadata(seasonDataMap)

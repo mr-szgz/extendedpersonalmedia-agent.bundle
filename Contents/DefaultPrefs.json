@@ -7,7 +7,7 @@
     },
     {
         "id": "user.plex.token",
-        "label": "X-Plex-Token",
+        "label": "Plex.tv Account Token (obtain using instructions here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)",
         "type": "text",
         "default": ""
     },

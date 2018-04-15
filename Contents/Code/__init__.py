@@ -1,7 +1,8 @@
 # Version Date: 2017-08-22
 
-import datetime, os, sys, time, re, locale, ConfigParser
+import datetime, os, sys, time, re, locale, ConfigParser, urllib2, urllib
 from string import Template
+from xml.dom import minidom
 
 # Series agent name
 SERIES_AGENT_NAME = 'Extended Personal Media Shows'
@@ -121,6 +122,12 @@ def loadTextFromFile(filePath):
 
     return textUnicode
 
+def getPlexToken():
+    return Prefs['user.plex.token']
+
+def isPlexTokenSet():
+    return getPlexToken() is not None and isNotBlank(getPlexToken())
+    
 def getSummaryFileExtension():
     '''
     Gets the summary file extension to use from the plugin preferences
@@ -144,6 +151,9 @@ def getMetadataFileExtension():
     return fileExt
     
 def findSeasonSummary(filePaths, fileNames):
+    '''
+    Finds the first matching season metadata file from the provided list of file paths and file names
+    '''
     seasonSummary = None
     logDebug('findSeasonSummary', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
     filePath = findFile(filePaths, fileNames)
@@ -156,6 +166,9 @@ def findSeasonSummary(filePaths, fileNames):
     return seasonSummary
 
 def findShowSummary(filePaths, fileNames):
+    '''
+    Finds the first matching show summary file from the provided list of file paths and file names
+    '''
     showSummary = None
     logDebug('findShowSummary', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
     filePath = findFile(filePaths, fileNames)
@@ -168,6 +181,9 @@ def findShowSummary(filePaths, fileNames):
     return showSummary
 
 def findShowMetadata(filePaths, fileNames):
+    '''
+    Finds the first matching show metadata file from the provided list of file paths and file names
+    '''
     filePath = None
     logDebug('findShowMetadata', 'looking for files with names %s in path list %s', str(fileNames), str(filePaths))
     filePath = findFile(filePaths, fileNames)
@@ -178,6 +194,39 @@ def findShowMetadata(filePaths, fileNames):
 
     return filePath
 
+def setSeasonMetadata(seasonDataMap):
+    '''
+    Calls the web API to set the season title and summary
+    '''
+    # if the plex toke is not set - skip
+    if(not isPlexTokenSet()):
+        log('setSeasonMetadata', 'Plex token is not set - skipping season title and summary update')
+        return
+    
+    log('setSeasonMetadata', 'Plex token is set - updating season title and summary update')
+    plexToken = getPlexToken()
+    #Get the library section id from the XML metadata
+    metadataCheckUrl = 'http://127.0.0.1:32400/library/metadata/'+str(seasonDataMap['id'])+'?checkFiles=1&includeExtras=1&X-Plex-Token=' + plexToken
+    logDebug('metadataXml','url: %s', metadataCheckUrl)
+
+    metadataXml = urllib2.urlopen(metadataCheckUrl) 
+    xmldoc = minidom.parse(metadataXml)
+    mediaContainer = xmldoc.getElementsByTagName('MediaContainer')[0]
+    librarySectionId = mediaContainer.attributes['librarySectionID'].value
+    logDebug('setSeasonMetadata','librarySectionId: %s', str(librarySectionId))
+
+    # Call the web API to set the season title and summary
+    data = {'type':'3','id':seasonDataMap['id'],'title.value':seasonDataMap['title'],'summary.value':seasonDataMap['summary'],'summary.locked':'0','X-Plex-Token':plexToken}
+    dataEncoded = urllib.urlencode(data)
+    logDebug('setSeasonMetadata','dataEncoded: %s', dataEncoded)
+    urlStr = 'http://127.0.0.1:32400/library/sections/'+str(librarySectionId)+'/all?' + dataEncoded
+    logDebug('setSeasonMetadata','url: %s', urlStr)
+    
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(urlStr,data=urllib.urlencode({'dummy':'dummy'}))
+    request.add_header('Content-Type', 'text/html')
+    request.get_method = lambda: 'PUT'
+    url = opener.open(request)
 
 class BaseMediaParser(object):
     '''
@@ -193,6 +242,7 @@ class BaseMediaParser(object):
                     ]
 
     def __init__(self):
+        self.seasonNumber = None
         self.seasonTitle = None
         self.episodeTitle = None
         self.episodeSummary = None
@@ -224,6 +274,11 @@ class BaseMediaParser(object):
         return processed
 
     def setValues(self, match):
+        # set the season number
+        self.seasonNumber = None
+        if 'seasonNumber' in match.groupdict() and match.group('seasonNumber') is not None:
+            self.seasonNumber = match.group('seasonNumber').strip()
+
         # set the season title
         if 'seasonTitle' in match.groupdict() and match.group('seasonTitle') is not None:
             self.seasonTitle = self.stripPart(match.group('seasonTitle').strip())
@@ -244,15 +299,13 @@ class BaseMediaParser(object):
         # if episodeMonth and episodeDay is present in the regex then the episode release date is in the file name and will be used
         if 'episodeMonth' in match.groupdict() and 'episodeDay' in match.groupdict():
             logDebug('setValues', 'episodeMonth found in the regular expression - extracting release date from the file name')
-            self.seasonNumber = None
-            if 'seasonNumber' in match.groupdict():
-                self.seasonNumber = int(match.group('seasonNumber').strip())
             self.episodeYear = None
             if 'episodeYear' in match.groupdict():
                 self.episodeYear = int(match.group('episodeYear').strip())
             # if the regex did not contain a year use the season number
-            if self.episodeYear is None and self.seasonNumber is not None and self.seasonNumber >= 1000:
-                self.episodeYear = self.seasonNumber
+            seasonNumberAsInt = int(self.seasonNumber)
+            if self.episodeYear is None and seasonNumberAsInt is not None and seasonNumberAsInt >= 1000:
+                self.episodeYear = seasonNumberAsInt
             self.episodeMonth = int(match.group('episodeMonth').strip())
             self.episodeDay = int(match.group('episodeDay').strip())
             # Create the date
@@ -304,6 +357,9 @@ class BaseMediaParser(object):
                 logDebug('parse', 'found matches')
                 self.setValues(match)
                 break
+
+    def getSeasonNumber(self):
+        return self.seasonNumber
 
     def getSeasonTitle(self):
         return self.seasonTitle
@@ -492,20 +548,29 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
         # set the metadata title
         metadata.title = media.title
         showTitle = metadata.title
+        logDebug('update', 'show id: %s', media.id)
+        logDebug('update', 'show title: %s', metadata.title)
         # list of file paths
         showFilePaths = []
         for s in media.seasons:
             logDebug('update', 'season %s', s)
+            seasonId = media.seasons[s].id
             seasonMetadata = metadata.seasons[s]
+            logDebug('update', 'season id: %s', seasonId)
             logDebug('update', 'season metadata %s', seasonMetadata)
+            logDebug('update', 'season title: %s', seasonMetadata.title)
             metadata.seasons[s].index = int(s)
             seasonFilePaths = []
 
-            seasonTitle = None            
+            # store the season number/title from one of the episodes
+            seasonTitle = None   
+            seasonNumber = None
             for e in media.seasons[s].episodes:
                 logDebug('update', 'episode: %s', e)
                 # Make sure metadata exists, and find sidecar media.
+                episodeId = media.seasons[s].episodes[e].id
                 episodeMetadata = metadata.seasons[s].episodes[e]
+                logDebug('update', 'episode id: %s', episodeId)
                 logDebug('update', 'episode metadata: %s', episodeMetadata)
                 episodeMedia = media.seasons[s].episodes[e].items[0]
 
@@ -540,29 +605,47 @@ class ExtendedPersonalMediaAgentTVShows(Agent.TV_Shows):
                         if seasonTitle is None and isNotBlank(parser.getSeasonTitle()):
                             seasonTitle = parser.getSeasonTitle()
 
+                        # get the season number from one of the episodes
+                        if seasonNumber is None and isNotBlank(parser.getSeasonNumber()):
+                            seasonNumber = parser.getSeasonNumber()
+
                         break
 
             # Check for season summary
             summaryFileExt = getSummaryFileExtension()
             # Build the list of the file names that we should look for
-            seasonFileNames = [showTitle + '-S' + s + summaryFileExt, showTitle + '-s' + s + summaryFileExt, 
-                                showTitle + '-C' + s + summaryFileExt, showTitle + '-c' + s + summaryFileExt, 
-                                showTitle + '-L' + s + summaryFileExt, showTitle + '-l' + s + summaryFileExt, 
-                                'season-' + s + summaryFileExt, 
-                                'chapter-' + s + summaryFileExt, 
-                                'lesson-' + s + summaryFileExt, 
-                                'S' + s + summaryFileExt, 's' + s + summaryFileExt, 
-                                'C' + s + summaryFileExt, 'c' + s + summaryFileExt, 
-                                'L' + s + summaryFileExt, 'l' + s + summaryFileExt]
+            logDebug('update', 's = %s, season number = %s', s, seasonNumber)
+            seasonFileNames = [showTitle + '-S' + seasonNumber + summaryFileExt, 
+                                showTitle + '-s' + seasonNumber + summaryFileExt, 
+                                showTitle + '-C' + seasonNumber + summaryFileExt, 
+                                showTitle + '-c' + seasonNumber + summaryFileExt, 
+                                showTitle + '-L' + seasonNumber + summaryFileExt, 
+                                showTitle + '-l' + seasonNumber + summaryFileExt, 
+                                'season-' + seasonNumber + summaryFileExt, 
+                                'chapter-' + seasonNumber + summaryFileExt, 
+                                'lesson-' + seasonNumber + summaryFileExt, 
+                                'S' + seasonNumber + summaryFileExt, 
+                                's' + seasonNumber + summaryFileExt, 
+                                'C' + seasonNumber + summaryFileExt, 
+                                'c' + seasonNumber + summaryFileExt, 
+                                'L' + seasonNumber + summaryFileExt, 
+                                'l' + seasonNumber + summaryFileExt]
             seasonSummary = findSeasonSummary(seasonFilePaths, seasonFileNames)
+            
+            # create a map for the season data that we want to update
+            seasonDataMap = {'id':seasonId, 'title':'', 'summary':''}
             if seasonSummary is not None:
-                seasonMetadata.summary = seasonSummary
-                log('update', 'season.summary: %s', seasonMetadata.summary)
+                #seasonMetadata.summary = seasonSummary
+                seasonDataMap['title'] = seasonSummary
+                log('update', 'season.summary: %s', seasonSummary)
             
             # Set the season title
             if seasonTitle is not None:
-                seasonMetadata.title = seasonTitle
-                log('update', 'season.title: %s', seasonMetadata.title)
+                #seasonMetadata.title = seasonTitle
+                seasonDataMap['summary'] = seasonTitle
+                log('update', 'season.title: %s', seasonTitle)
+            # Set the season details
+            setSeasonMetadata(seasonDataMap)
             
         # Check for show summary
         summaryFileExt = getSummaryFileExtension()

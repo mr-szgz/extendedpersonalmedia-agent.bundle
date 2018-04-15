@@ -302,10 +302,12 @@ class BaseMediaParser(object):
             self.episodeYear = None
             if 'episodeYear' in match.groupdict():
                 self.episodeYear = int(match.group('episodeYear').strip())
+            # if the regex did not contain a season number but contains an episode year - use the episode year
+            if self.seasonNumber is None and self.episodeYear is not None:
+                self.seasonNumber = str(self.episodeYear)
             # if the regex did not contain a year use the season number
-            seasonNumberAsInt = int(self.seasonNumber)
-            if self.episodeYear is None and seasonNumberAsInt is not None and seasonNumberAsInt >= 1000:
-                self.episodeYear = seasonNumberAsInt
+            if self.episodeYear is None and self.seasonNumber is not None and int(self.seasonNumber) >= 1000:
+                self.episodeYear = int(self.seasonNumber)
             self.episodeMonth = int(match.group('episodeMonth').strip())
             self.episodeDay = int(match.group('episodeDay').strip())
             # Create the date

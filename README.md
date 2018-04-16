@@ -217,9 +217,9 @@ The following formats are supported for season summary files:
 * **[S|s|C|c|L|l][Season Number].summary**
 
 Where:
-* [Show title] is the name of your show that you want the summary information to be added to
-* [S|s|C|c|L|l] is abbreviation for season, chapter or lesson
-* [Season Number] is the season number of the show
+* **[Show title] is the name of your show that you want the summary information to be added to**
+* **[S|s|C|c|L|l] is abbreviation for season, chapter or lesson**
+* **[Season Number] is the season number of the show**
 
 Example media file:
 

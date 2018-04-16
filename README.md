@@ -189,7 +189,7 @@ The plugin also supports using "Lesson" instead of "Chapter" or "Season".
 
 Show summaries can be added to media files in Plex by creating a file with the show name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
 
-*It is important to note that the show summary file found will be used as the summary information for the show.*
+*It is important to note that the first file found will be used as the summary information for the show.*
 
 There are two formats supported for show summary files:
 
@@ -203,6 +203,31 @@ Example media file:
 Summary file:
 
 ```/Media Root/Show title/Show title.summary```
+
+## Season summaries
+
+Season summaries can be added to media files in Plex by creating a file with the season name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
+
+*It is important to note that the first file found will be used as the summary information for the season.*
+
+The following formats are supported for season summary files:
+
+* **[Show title]-[S|s|C|c|L|l][Season Number].summary**
+* **[season|chapter|lesson][Season Number].summary**
+* **[S|s|C|c|L|l][Season Number].summary**
+
+Where:
+* [Show title] is the name of your show that you want the summary information to be added to
+* [S|s|C|c|L|l] is abbreviation for season, chapter or lesson
+* [Season Number] is the season number of the show
+
+Example media file:
+
+```/Media Root/Show title/Show title - 2010-02-02 - Some title.mp4```
+
+Summary file:
+
+```/Media Root/Show title/Show title-S2010.summary```
 
 ## Episode summaries
 

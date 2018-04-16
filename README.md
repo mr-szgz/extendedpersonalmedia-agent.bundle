@@ -213,7 +213,7 @@ Season summaries can be added to media files in Plex by creating a file with the
 The following formats are supported for season summary files:
 
 * **[Show title]-[S|s|C|c|L|l][Season Number].summary**
-* **[season|chapter|lesson][Season Number].summary**
+* **[season|chapter|lesson]-[Season Number].summary**
 * **[S|s|C|c|L|l][Season Number].summary**
 
 Where:

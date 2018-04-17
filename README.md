@@ -97,11 +97,11 @@ In the example of above three separate episode would be created in Plex and each
          Christmas - s2010e1225 - Christmas Morning.m4v
 ```
 
-### Additional supported formats:
+### Season Titles:
+
+**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
 
 If the season title is specified it should go in the season description. 
-
-** Right now this is not working. I'm looking into why this failing.**
 
 ```
 /Home Movies
@@ -205,6 +205,8 @@ Summary file:
 ```/Media Root/Show title/Show title.summary```
 
 ## Season summaries
+
+**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
 
 Season summaries can be added to media files in Plex by creating a file with the season name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
 

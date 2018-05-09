@@ -6,10 +6,22 @@
         "default": "false"
     },
     {
-        "id": "use.last.modified.timestamp.enabled",
+        "id": "user.plex.token",
+        "label": "Plex.tv Account Token (obtain using instructions here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)",
+        "type": "text",
+        "default": ""
+    },
+    {
+        "id": "episode.use.last.modified.timestamp.enabled",
         "label": "Use last modified timestamp for episodes?",
         "type": "bool",
         "default": "true"
+    },
+    {
+        "id": "episode.use.created.timestamp.enabled",
+        "label": "Use created timestamp for episodes (can only be enabled if 'Use last modified timestamp' is NOT enabled)?",
+        "type": "bool",
+        "default": "false"
     },
     {
         "id": "episode.title.scrub.enabled",

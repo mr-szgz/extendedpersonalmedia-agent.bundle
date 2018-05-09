@@ -28,26 +28,21 @@ This results in it being sorted correctly in all Plex user interfaces. The episo
          Christmas.12-25-2010.Christmas.Morning.m4v
 ```
 
-### Additional supported formats:
+### Season title:
 
-If the season title is specified it should go in the season description. 
+**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
 
-**Right now this is not working. I'm looking into why this failing.**
+If you want to add a season title to your media then you will need to append it to the season number as shown in the example below. In addition to using a dash (-) as a separator, a period (.) or underscore (\_) can also be used.
 
 ```
 /Home Movies
    /Christmas
-      /2010
+      /2010 - Rocking around the tree
          2010-01-06 - Getting Ready.m4v
          12-24 - Stuffing the Stockings.m4v
 ```
-```
-      /2011 - Season title
-         2011-01-06 - Some.title.m4v
-         12-24 - Some_other_title.m4v
-```
 
-The above example would result in a show with **Christmas** as the show title. The season number, episode number and episode title would be parsed from the names.
+The above example would result in the 2010 season having a title of **Rocking around the tree**.
 
 ### Unstructured format:
 
@@ -97,24 +92,6 @@ In the example of above three separate episode would be created in Plex and each
          Christmas - s2010e1225 - Christmas Morning.m4v
 ```
 
-### Additional supported formats:
-
-If the season title is specified it should go in the season description. 
-
-** Right now this is not working. I'm looking into why this failing.**
-
-```
-/Home Movies
-   /Christmas
-      /2010
-         s2010e01 - Getting Ready.m4v
-         e02 - Another episode.m4v
-      /2011 - Season title
-         s2010e01 - Getting Ready.m4v
-```
-
-The above example would result in a show with **Christmas** as the show title. The season number, episode number and episode title would be parsed from the names.
-
 ### Episodes that contain episode release dates:
 
 The following shows the different supported directory/file formats that are supported by the plug-in.
@@ -133,6 +110,24 @@ The following shows the different supported directory/file formats that are supp
 ```
 
 The above example would result in a show with **NFL** as the show title. The season number, episode number, episode release date and episode title would be parsed from the names. The example shows 8 episodes specified above each would show up having the release date of 12-31-2015 in Plex.
+
+### Season title:
+
+**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
+
+If you want to add a season title to your media then you will need to append it to the season number as shown in the example below. In addition to using a dash (-) as a separator, a period (.) or underscore (\_) can also be used.
+
+```
+/Home Movies
+   /Christmas
+      /2010 - Christmas in Minnesota
+         s2010e01 - Getting Ready.m4v
+         e02 - Another episode.m4v
+      /2011 - Christmas in California
+         s2010e01 - Getting Ready.m4v
+```
+
+The above example would result in the 2010 season having a title of **Christmas in Minnesota** and the 2011 season having a title of **Christmas in California**.
 
 ### Unstructured format:
 
@@ -189,7 +184,7 @@ The plugin also supports using "Lesson" instead of "Chapter" or "Season".
 
 Show summaries can be added to media files in Plex by creating a file with the show name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
 
-*It is important to note that the show summary file found will be used as the summary information for the show.*
+*It is important to note that the first file found will be used as the summary information for the show.*
 
 There are two formats supported for show summary files:
 
@@ -203,6 +198,34 @@ Example media file:
 Summary file:
 
 ```/Media Root/Show title/Show title.summary```
+
+## Season summaries
+
+**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
+
+Season summaries can be added to media files in Plex by creating a file with the season name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
+
+*It is important to note that the first file found will be used as the summary information for the season.*
+
+The following formats are supported for season summary files:
+
+* **[Show title]-[S|s|C|c|L|l][Season Number].summary**
+* **[season|chapter|lesson]-[Season Number].summary**
+* **[S|s|C|c|L|l][Season Number].summary**
+
+Where:
+
+* **[Show title]** is the name of your show that you want the summary information to be added to
+* **[S|s|C|c|L|l]** is abbreviation for season, chapter or lesson
+* **[Season Number]** is the season number of the show
+
+Example media file:
+
+```/Media Root/Show title/Show title - 2010-02-02 - Some title.mp4```
+
+Summary file:
+
+```/Media Root/Show title/Show title-S2010.summary```
 
 ## Episode summaries
 

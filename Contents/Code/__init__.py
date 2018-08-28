@@ -413,7 +413,88 @@ class SeriesDateBasedMediaParser(BaseMediaParser):
                 #2012\Show Title\09-19 - Episode Title.mp4
                 r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})(_(?P<episodeIndex>[0-9]+)){0,2}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
                 ]
-                 
+
+
+class SeriesDateTimeBasedMediaParser(BaseMediaParser):
+    def getSupportedRegexes(self):
+        return [
+                # \Show Title - 2012-09-19_23 13 00 - Episode Title.mp4
+                # \Show.Title.2012.09.19-23.13.00.Episode.Title.mp4
+                r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                # \Show Title - 09-19-2012_09-39-23 - Episode Title.mp4
+                # \Show.Title.09.19.2012 23.34.30.Episode.Title.mp4
+                r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #Show Title\2012 - Season Title\Show Title - 2012-09-19 13 00 00 - Episode Title.mp4
+                #Show Title\2012 - Season Title\2012-09-19 13 00 00 - Episode Title.mp4    
+                #Show Title\2012\Show Title - 2012-09-19_13-00-00 - Episode Title.mp4
+                #Show Title\2012\2012-09-19 13 00 00 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #2012 - Season Title\Show Title\Show Title - 2012-09-19.13-00-00 - Episode Title.mp4
+                #2012 - Season Title\Show Title\2012-09-19_13-00-00 - Episode Title.mp4    
+                #2012\Show Title\Show Title - 2012-09-19 13 00 00 - Episode Title.mp4
+                #2012\Show Title\Show Title - 2012.09.19.07.01.01.AM - Episode Title.mp4
+                #2012\Show Title\2012-09-19 13 00 00 - Episode Title.mp4
+                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #Show Title\2012 - Season Title\Show Title - 09-19-2013 13 00 00 - Episode Title.mp4
+                #Show Title\2012 - Season Title\09-19-2013 13 00 00 - Episode Title.mp4
+                #Show Title\2012 - Season Title\09-19-2013 01-01-00-AM - Episode Title.mp4
+                #Show Title\2012\Show Title - 09-19-2013 13 00 00 - Episode Title.mp4
+                #Show Title\2012\09-19-2013 13 00 00 - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #2012 - Season Title\Show Title\Show Title - 09-19-2013 13 00 00 - Episode Title.mp4
+                #2012 - Season Title\Show Title\09-19-2013 13 00 00 - Episode Title.mp4
+                #2012\Show Title\Show Title - 09-19-2013 13 00 00 - Episode Title.mp4
+                #2012\Show Title\09-19-2013 13 00 00 - Episode Title.mp4
+                #2012\Show Title\09.19.2013_10.00.00.AM - Episode Title.mp4
+                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<season Title>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
+                #Show Title\2012\Show Title - 09-19 13 00 00 - Episode Title.mp4
+                #Show Title\2012\09-19 13 00 00 - Episode Title.mp4
+                #Show Title\2012\09-19 09-03-00-AM - Episode Title.mp4
+                r'(?P<showTitle>[^\\/]+)[\\/](?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #2012\Show Title\Show Title - 09-19 13 00 00 - Episode Title.mp4
+                #2012\Show Title\09-19 13 00 00 - Episode Title.mp4
+                #2012\Show Title\09-19_12.14.15.AM - Episode Title.mp4
+                r'(?P<seasonNumber>[0-9]{4})([-\. ]+(?P<seasonTitle>[^\\/]+)){0,1}[\\/](?P<showTitle>[^\\/]+)[\\/][^\\/]*?(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>AM|am|PM|pm){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$'
+                ]
+
+    def setValues(self, match):
+        # set the common values
+        BaseMediaParser.setValues(self, match)
+
+        # check to see if the "Add time to episode title" preference is enabled
+        if bool(Prefs['episode.add.time.to.title.enabled']):
+            logDebug('setValues', "Add time to episode title is enabled - extracting episode time from the file's name")
+            episodeTimeFormatType = Prefs['episode.add.time.to.title.format']            
+            logDebug('setValues', "Add time to episode title format = %s", episodeTimeFormatType)
+            
+            # parse the hour parts
+            self.episodeHour = int(match.group('episodeHour').strip())
+            self.episodeAMPM = None
+            if 'episodeAMPM' in match.groupdict():
+                self.episodeAMPM = match.group('episodeAMPM').strip()
+            # if the regex contains PM then add 12 hours to episode
+            if self.episodeAMPM is not None and self.episodeAMPM.lower() == 'pm':
+                log('setValues', 'episode contains PM - adding 12 hours to episode hour %s', self.episodeHour)
+                self.episodeHour = self.episodeHour + 12
+                log('setValues', 'new value = %s', self.episodeHour)            
+            self.episodeMinute = int(match.group('episodeMinute').strip())
+            self.episodeSecond = int(match.group('episodeSecond').strip())
+            log('setValues', 'parse time: hour %s minute %s second %s', self.episodeHour, self.episodeMinute, self.episodeSecond)
+            episodeTime = datetime.time(self.episodeHour, self.episodeMinute, self.episodeSecond)
+            # if the format type is 24 hours and regex contains AM/PM then calculate new hour value
+            formattedTimeString = None
+            if episodeTimeFormatType == '24 Hour':
+                log('setValues', 'formatting us 24 hour time')
+                formattedTimeString = time.strftime('%H:%M:%S')
+            elif episodeTimeFormatType == 'AM/PM':
+                log('setValues', 'formatting us AM/PM time')
+                formattedTimeString = time.strftime('%I:%M:%S %p')
+            log('setValues', 'formatted time %s', formattedTimeString)
+
+            # prepend the time to the title
+            self.episodeTitle = formattedTimeString + ' ' + self.episodeTitle
+
+                
 class SeriesEpisodeMediaParser(BaseMediaParser):
 
     def getSupportedRegexes(self):

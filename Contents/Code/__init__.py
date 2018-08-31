@@ -424,6 +424,10 @@ class SeriesDateTimeBasedMediaParser(BaseMediaParser):
                 # \Show Title - 09-19-2012_09-39-23 - Episode Title.mp4
                 # \Show.Title.09.19.2012 23.34.30.Episode.Title.mp4
                 r'[\\/](?P<showTitle>[^\\/]+?)[ ]*[-\.]{0,1}[ ]*(?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. ](?P<episodeYear>[0-9]{4})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>[AM|PM]{2}){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$',
+                #2012\02\2012-02-19 13 00 00 - Episode Title.mp4
+                #2012\02\2012-02-19 13-00-00 - Episode Title.mp4
+                #2013\03\2013.03.19_01.00.00.AM - Episode Title.mp4
+                r'(?P<showTitle>[0-9]{4})[\\/](?P<seasonNumber>[0-9]{2})[\\/][^\\/]*?(?P<episodeYear>[0-9]{4})[-\. ](?P<episodeMonth>[0-9]{2})[-\. ](?P<episodeDay>[0-9]{2})[-\. _](?P<episodeHour>[0-9]{2})[-\. ](?P<episodeMinute>[0-9]{2})[-\. ](?P<episodeSecond>[0-9]{2})[-\. ](?P<episodeAMPM>[AM|PM]{2}){0,1}[ ]*[-\.]{0,1}[ ]*(?P<episodeTitle>.*)\.(?P<ext>.+)$' , 
                 #Show Title\2012 - Season Title\Show Title - 2012-09-19 13 00 00 - Episode Title.mp4
                 #Show Title\2012 - Season Title\2012-09-19 13 00 00 - Episode Title.mp4    
                 #Show Title\2012\Show Title - 2012-09-19_13-00-00 - Episode Title.mp4

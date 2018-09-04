@@ -79,6 +79,42 @@ The Extended Personal Media scanner and agent allow the user to specific an inde
 
 In the example of above three separate episode would be created in Plex and each with their own name.
 
+## Date/time episodes
+
+This section describes the formats that are supported for episodes that contain date and time in the episode file name and/or directory structure. Options that can be enabled for date/time episodes are covered in the [Plugin Configuration](#plugin-configuration) section below.
+
+### Formats supported
+
+```
+/Home Movies
+   /Christmas
+      /2010
+         Christmas - 2010-01-06_01-03-43-AM - Getting Ready.m4v
+         Christmas - 01.07.2010 05.15.15 - Getting Ready.m4v
+         Christmas - 2010.12.24-11.23.23 AM - Stuffing_the_Stockings.m4v
+         Christmas.12 25 2010_08 34 34.Christmas.Morning.m4v
+   /Kids
+      2015.01.23.12.34.34 AM - Playing outside
+   /2010
+      /12
+         Christmas.12-25-2010_08.34.34.Christmas.Morning.m4v
+   /2018
+      /Christmas
+         12.25.2018_08.34.34.Christmas.Morning.m4v
+         12.25_08.34.34.Christmas.Morning.m4v
+```
+The following characters can be used to separate the numbers in the date and/or time in the episode file name:
+
+* space ( )
+* dash (-)
+* period (.)
+
+The following characters can be used to separate the date and time in the episode file name:
+
+* space ( )
+* dash (-)
+* period (.)
+* underscore (_)
 
 ## Episode-number based shows
 
@@ -250,6 +286,62 @@ release=2017-05-01
 studio=Studio XYZ
 genres=Linux, Automation
 ```
+
+## Plugin configuration
+
+This section describes the different configuration options available within the Extended Personal Media metadata agent plugin.
+###Enable debug logging?
+Enable this option if you want to see more log messages in the plugin's log file. 
+
+This is disabled by default.
+
+###Plex.tv Account Token
+The token is required if you want the plugin to update the season titles within Plex. This is only required if you have included the season titles in your file paths or in the metadata files. See https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/ for instructions on obtaining the token.
+
+###Use last modified timestamp for episodes?
+Enable this option if want the plugin to use the episode file's last modified timestamp when setting the release date in Plex. 
+
+This is enabled by default.
+
+###Use created timestamp for episodes
+Enable this option if want the plugin to use the episode file's created on timestamp when setting the release date in Plex. 
+
+This is disabled by default. 
+
+If "Use last modified timestamp for episodes?" is enabled this option will be ignored.
+
+###Enable episode title scrubbing?
+Enable this option if want the plugin to scrub certain characters from the episode title when setting the title in Plex.
+
+###Comma separated list of values to scrub from the episode title
+List of values to scrub from episode titles. This is only used if "Enable episode title scrubbing?" is enabled. 
+
+By default the value is set to ".= ,-= ,_= ". The value must follow the format A=B,C=D. In this example A will be replaced by B in the episode title and C will be replaced by D.
+
+###File extension to use for summary files
+File extension to use for summary files. Summary files allow you to add a description to an episode in Plex.
+
+By default the value is set to "summary". *NOTE: The value should not start with a period "."*
+
+###Use metadata file for shows?
+Enable this option to use metadata files for shows. 
+
+This is disabled by default.
+
+###File extension to use for metadata files
+File extension to use for show metadata files.
+
+By default the value is set to "metadata". *NOTE: The value should not start with a period "."*
+
+###Use time stamp from the file name in the episode title
+Enable this option if you want the timestamp from the episode to be pre-pended to the episode title in Plex.
+
+This is disabled by default.
+
+###Episode title time stamp format
+The format to use when pre-pending the episode time to the episode title. Select "AM/PM" to format the time in 12 hour time or "24 Hour" to format the time in 24 hour time. This value is only applicable if the "Use time stamp from the file name in the episode title" option is enabled.
+
+By default the value is "24 Hour".
 
 ## Download and source
 

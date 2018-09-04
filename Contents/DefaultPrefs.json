@@ -61,7 +61,7 @@
     },
     {
         "id": "episode.add.time.to.title.format",
-        "label": "Episode title time stamp format (default value: AM/PM). Only valid if 'Use time stamp from the file name in the episode title' is selected.",
+        "label": "Episode title time stamp format (default value: 24 Hour). Only valid if 'Use time stamp from the file name in the episode title' is selected.",
         "type": "enum",
         "values": [
             "AM/PM",

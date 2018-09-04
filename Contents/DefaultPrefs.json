@@ -52,5 +52,21 @@
         "label": "File extension to use for metadata files (default value: metadata). Do not include the period ('.') in the value.",
         "type": "text",
         "default": "metadata"
+    },
+    {
+        "id": "episode.add.time.to.title.enabled",
+        "label": "Use time stamp from the file name in the episode title (default value: false). Only valid for files following date/time naming format.",
+        "type": "bool",
+        "default": "false"
+    },
+    {
+        "id": "episode.add.time.to.title.format",
+        "label": "Episode title time stamp format (default value: 24 Hour). Only valid if 'Use time stamp from the file name in the episode title' is selected.",
+        "type": "enum",
+        "values": [
+            "AM/PM",
+            "24 Hour"
+            ],
+        "default": "24 Hour"
     }
 ]

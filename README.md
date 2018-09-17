@@ -295,9 +295,6 @@ Enable this option if you want to see more log messages in the plugin's log file
 
 This is disabled by default.
 
-###Plex.tv Account Token
-The token is required if you want the plugin to update the season titles within Plex. This is only required if you have included the season titles in your file paths or in the metadata files. See https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/ for instructions on obtaining the token.
-
 ###Use last modified timestamp for episodes?
 Enable this option if want the plugin to use the episode file's last modified timestamp when setting the release date in Plex. 
 

@@ -123,7 +123,8 @@ def loadTextFromFile(filePath):
     return textUnicode
 
 def getPlexToken():
-    return Prefs['user.plex.token']
+    logDebug('getPlexToken', 'getting Plex token from the environment')
+    return os.environ['PLEXTOKEN']
 
 def isPlexTokenSet():
     return getPlexToken() is not None and isNotBlank(getPlexToken())

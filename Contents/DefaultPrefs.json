@@ -6,12 +6,6 @@
         "default": "false"
     },
     {
-        "id": "user.plex.token",
-        "label": "Plex.tv Account Token (obtain using instructions here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)",
-        "type": "text",
-        "default": ""
-    },
-    {
         "id": "episode.use.last.modified.timestamp.enabled",
         "label": "Use last modified timestamp for episodes?",
         "type": "bool",

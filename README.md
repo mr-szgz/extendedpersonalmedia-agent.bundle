@@ -30,8 +30,6 @@ This results in it being sorted correctly in all Plex user interfaces. The episo
 
 ### Season title:
 
-**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
-
 If you want to add a season title to your media then you will need to append it to the season number as shown in the example below. In addition to using a dash (-) as a separator, a period (.) or underscore (\_) can also be used.
 
 ```
@@ -149,8 +147,6 @@ The above example would result in a show with **NFL** as the show title. The sea
 
 ### Season title:
 
-**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
-
 If you want to add a season title to your media then you will need to append it to the season number as shown in the example below. In addition to using a dash (-) as a separator, a period (.) or underscore (\_) can also be used.
 
 ```
@@ -236,8 +232,6 @@ Summary file:
 ```/Media Root/Show title/Show title.summary```
 
 ## Season summaries
-
-**IMPORTANT: Use of this feature will require you to obtain and set your Plex.tv token in the plugin settings. To obtain the Plex.tv account token follow the instructions [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)**
 
 Season summaries can be added to media files in Plex by creating a file with the season name and a ".summary" extension somewhere within the directory path of your media file that you want to add the summary to. 
 

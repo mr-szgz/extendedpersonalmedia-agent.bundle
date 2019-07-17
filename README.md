@@ -396,4 +396,4 @@ The following shows where the PMS Plugin Logs directory is on the different oper
 
 ## More Information
 
-See the this [post](https://forums.plex.tv/index.php/topic/83440-rel-extended-personal-media-shows-agent/) in the Plex forums for more details on how to install and use this agent within Plex Media Server.
+See this [post](https://forums.plex.tv/discussion/83440/rel-extended-personal-media-shows-agent/p1) in the Plex forums for the change log and the discussion thread on this metadata agent.
